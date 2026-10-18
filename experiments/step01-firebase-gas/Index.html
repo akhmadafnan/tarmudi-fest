@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#fff8e8;color:#202020;margin:0;padding:24px}
+main{max-width:430px;margin:0 auto}.panel{border:3px solid #202020;background:#fff;padding:22px;box-shadow:6px 6px 0 #202020}
+h1{font-size:27px;line-height:1.15}p{line-height:1.5}label{font-weight:700;display:block;margin:15px 0 6px}
+input{border:2px solid #202020;border-radius:4px;padding:13px;width:100%;font-size:18px;min-height:48px}
+button{background:#f9cf45;border:2px solid #202020;width:100%;min-height:50px;font-size:17px;font-weight:700;margin-top:20px;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}.status{border:2px solid #202020;background:#d5f18a;padding:12px;margin-top:18px;white-space:pre-wrap;overflow-wrap:anywhere}
+small{color:#4b4b4b}.hidden{display:none}
+</style></head>
+<body><main><div class="panel">
+<small>STEP 01 • AUTH-GATE • NON-PRODUKSI</small>
+<h1>Tarmudi Fest 2026</h1>
+<p>Uji Firebase Authentication. Tidak ada data peserta atau penjurian di halaman ini.</p>
+<form id="form">
+<label for="username">Username</label>
+<input required name="username" id="username" autocomplete="username" placeholder="juri-thf-01" maxlength="40" pattern="[a-z0-9-]+">
+<label for="password">Password</label>
+<input required type="password" name="password" id="password" autocomplete="current-password" minlength="8">
+<button type="submit" id="login">Masuk untuk uji</button>
+</form>
+<button class="hidden" type="button" id="logout">Keluar</button>
+<div role="status" aria-live="polite" id="status" class="status">Menunggu pengaturan Firebase...</div>
+</div></main>
+<script>
+"use strict";
+const CONFIG = <?!= publicConfig ?>;
+const usernameInput=document.getElementById("username");
+const passwordInput=document.getElementById("password");
+const button=document.getElementById("login");
+const statusEl=document.getElementById("status");
+const form=document.getElementById("form");
+const logout=document.getElementById("logout");
+let currentIdToken=null;
+function show(s){statusEl.textContent=s}
+show(CONFIG.apiKey&&CONFIG.projectId&&CONFIG.domain
+ ? "Uji terkonfigurasi. Silakan masuk memakai akun sintetis."
+ : "Firebase belum terkonfigurasi; belum ada akun login.");
+form.addEventListener("submit",async function(event){
+ event.preventDefault();
+ if(!CONFIG.apiKey||!CONFIG.domain){show("Firebase belum dikonfigurasi.");return;}
+ const username=usernameInput.value.trim().toLowerCase();
+ if(!/^[a-z0-9-]{3,40}$/.test(username)){show("Format username salah.");return;}
+ button.disabled=true; show("Memverifikasi melalui Firebase...");
+ try{
+  const reply=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+encodeURIComponent(CONFIG.apiKey),{
+   method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({email:username+"@"+CONFIG.domain,password:passwordInput.value,returnSecureToken:true})
+  });
+  // Password is never sent to GAS, GitHub, or any logging endpoint.
+  passwordInput.value="";
+  if(!reply.ok){show("Username atau password tidak valid.");return;}
+  const data=await reply.json();
+  currentIdToken=data.idToken;
+  if(!currentIdToken){show("Login tidak berhasil.");return;}
+  show("Firebase menerima login. Memeriksa hak akses pada server...");
+  google.script.run.withSuccessHandler(function(result){
+   if(result&&result.ok===true){
+    show("PASS — Identitas terverifikasi; Peran: "+result.role+"; Cabang: "+result.competition);
+    form.classList.add("hidden");logout.classList.remove("hidden");
+   }else{currentIdToken=null;show("Akun belum memiliki izin. Hubungi Admin.");}
+  }).withFailureHandler(function(){
+   currentIdToken=null;show("Verifikasi server tidak berhasil. Coba kembali.");
+  }).apiWhoAmI(currentIdToken);
+ }catch(e){currentIdToken=null;passwordInput.value="";show("Jaringan atau autentikasi tidak tersedia.");}
+ finally{button.disabled=false;}
+});
+logout.addEventListener("click",function(){
+ currentIdToken=null;passwordInput.value="";form.classList.remove("hidden");
+ logout.classList.add("hidden");show("Anda telah keluar dari sesi halaman ini.");
+});
+</script></body></html>
