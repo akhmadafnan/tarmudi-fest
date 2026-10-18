@@ -14,6 +14,8 @@ A proposed open-source, mobile-first competition platform inspired by the operat
 - Intended primary stack: **Google Apps Script + Sheets + Drive/Docs**, pending **STEP 01 AUTH-GATE** proving secure password hashing, sessions and branch-specific server authorization. The project owner's personal Google account owns infrastructure but is **not** the staff/judge login.
 - Visual direction: **mobile-first Neo-Brutalism**.
 
+The planned 13 internal usernames and roles are also available in [`examples/synthetic/initial_internal_accounts_13.csv`](examples/synthetic/initial_internal_accounts_13.csv) (**identifiers only; not live accounts or passwords**).
+
 The authoritative Indonesian product specification is in [`docs/product/PRD_TARMUDI_FEST_V1.5.md`](docs/product/PRD_TARMUDI_FEST_V1.5.md) (active). V1.4 remains [archived](docs/product/PRD_TARMUDI_FEST_V1.4.md) for audit history. Identity decisions: [`DECISION_REGISTER.md`](docs/governance/DECISION_REGISTER.md), [`ADR-0003`](docs/architecture/ADR-0003-internal-authentication.md). The detailed STEP 00 readiness register is in [`docs/operations/STEP00_READINESS_AUDIT.md`](docs/operations/STEP00_READINESS_AUDIT.md).
 
 ## Repository status

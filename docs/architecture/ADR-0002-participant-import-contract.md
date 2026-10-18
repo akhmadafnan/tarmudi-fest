@@ -1,6 +1,6 @@
 # Kontrak Impor Peserta — Baseline Contoh V1 (STEP 00)
 
-**Status:** data-format baseline untuk implementasi mendatang; **bukan kode aplikasi dan belum diuji pada layanan produksi**. PRD V1.4 tetap menjadi baseline persyaratan produk yang terkunci.
+**Status:** data-format baseline untuk implementasi mendatang; **bukan kode aplikasi dan belum diuji pada layanan produksi**. PRD V1.5 merupakan baseline persyaratan produk aktif; V1.4 tersimpan sebagai arsip riwayat.
 
 ## Tujuan
 

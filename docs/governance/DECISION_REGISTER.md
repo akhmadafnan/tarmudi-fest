@@ -36,3 +36,5 @@
 1. STEP 00 administrative handover: judge-count/addendum, publication/privacy authority, device/network fallback and operational responsibilities.
 2. STEP 01 authentication feasibility on the candidate GAS stack, including vetted credential storage and revocable sessions.
 3. No production deployment or actual participant records are authorized by this document.
+
+**Seed account manifest (no secrets):** [`examples/synthetic/initial_internal_accounts_13.csv`](../../examples/synthetic/initial_internal_accounts_13.csv). The manifest represents *planned accounts*, not operational credentials.

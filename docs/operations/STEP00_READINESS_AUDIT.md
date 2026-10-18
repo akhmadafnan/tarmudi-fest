@@ -49,7 +49,7 @@
 
 | Risk | Level | Safe STEP 00 action |
 |---|---|---|
-| GAS cannot securely hash passwords, provision sessions or throttle logins within quota/browser constraints | CRITICAL | STEP 01 AUTH-GATE is mandatory; reject insecure custom auth shortcuts. |
+| Risk GAS may fail secure password hashing, session management or login throttling within quota/browser constraints | CRITICAL | STEP 01 AUTH-GATE is mandatory; reject insecure custom auth shortcuts if feasibility fails. |
 | GitHub public repository leaks minors' data, production hashes, initial passwords or session tokens | CRITICAL | Publish docs/code and synthetic fixtures only; keep credentials and operations outside repo. |
 | Third-party assets mistakenly represented as MIT-licensed | HIGH | MIT approval recorded, `LICENSE` included; exclude original logo/Juknis and external proprietary assets. |
 | Event-brand intellectual-property rights confused with MIT code license | MEDIUM | Trademark/logo excluded unless separately authorized. |
@@ -125,3 +125,9 @@
 - **No insecure defaults:** per-user cryptographically secure temporary passwords, private delivery, forced first-use rotation, adaptive salted hashes, revocable sessions, server authorization, throttled authentication attempts. Feasibility in GAS to be demonstrated; if it cannot be secured, stop and seek approval for an alternative.
 - **Docs:** active `PRD_TARMUDI_FEST_V1.5.md`, `DECISION_REGISTER.md`, `ADR-0003-internal-authentication.md`, rewritten `STEP01_AUTH_GATE_PLAN.md`. V1.4 remains archive unchanged.
 - **Gate result:** repository documentation UPDATED, but overall STEP 00 remains **IN_PROGRESS / CONDITIONAL_NO_GO**; operational privacy/approvers, Juknis judge count, mobile/fallback details and account-bootstrap feasibility still pending. No business module code or deployment authorized.
+
+### 13-account synthetic provisioning blueprint
+
+- An explicit **username/role/competition CSV** has been prepared at `examples/synthetic/initial_internal_accounts_13.csv`.
+- It contains only approved account *identifiers* and planned scopes; it includes **no password/hash/token/email** and does not provision real accounts.
+- Use it for tests in STEP 01 only after secure implementation is approved; activate the required 2–3 judges per competition before judging begins.
