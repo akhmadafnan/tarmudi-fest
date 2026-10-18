@@ -34,6 +34,10 @@ Third-party festival logos, school marks, and third-party copyrighted materials 
 
 Contributions are welcome under the repository MIT License. Please read [`CONTRIBUTING.md`](CONTRIBUTING.md). For security issues, **do not file a public issue**; read [`SECURITY.md`](SECURITY.md).
 
+## Engineering & security readiness
+
+The project adopts an OOP modular-monolith **design baseline** for GAS V8: [ADR-0004](docs/architecture/ADR-0004-oop-gas-modular-monolith.md), [module contracts](docs/architecture/GAS_MODULE_CONTRACTS_V1.md), [authentication threat model](docs/security/AUTH_THREAT_MODEL_V1.md), and [STEP 00 engineering audit](docs/operations/STEP00_ENGINEERING_READINESS_GATE.md). **No application code or authenticated session is implemented.** GAS-specific password KDF, cryptographic randomness and session transport remain HIGH-RISK/NOT TESTED.
+
 ## Roadmap
 
 `STEP 00` audit and repository preparation → `STEP 01` internal password/session AUTH-GATE proof of concept → `STEP 02` data structure → `STEP 03` check-in → `STEP 04` Admin scoring configuration → `STEP 05` mobile blind judging → `STEP 06` results/public interim leaderboard → `STEP 07` approval/identity publication → `STEP 08` official minutes/PDF → `STEP 09` UAT → `STEP 10` production release and archive.

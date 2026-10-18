@@ -45,3 +45,14 @@ Show whether **13 pre-provisioned username/password accounts** can securely auth
 - Any failure of password handling, session security or branch isolation is **NO-GO**; propose alternative free approach only with owner approval.
 
 **No production password accounts, app code, or deployment created by this plan.**
+
+
+## Pre-code platform verification checklist (applicable when STEP 01 starts)
+
+- [ ] V8 runtime API availability: no built-in `crypto.subtle`; verify HMAC primitives and the feasibility/benchmark of OWASP-grade password KDF at actual quotas.
+- [ ] Verify high-quality randomness generation route for unique salts and session secrets; `Utilities.getUuid()` by itself is not accepted as proof of CSPRNG entropy.
+- [ ] Browser/IFRAME test for cookie header controls, session storage model and CSRF/XSS mitigation; no assumption that GAS can set `HttpOnly; Secure; SameSite` on its own response.
+- [ ] Audit all public `google.script.run` entrypoints (not just UI menus) for deny-by-default role, branch and session authorization.
+- [ ] Verify that staff/judges never gain direct Sheets/Drive permissions; public endpoints are anonymous read-only and cannot be used to enumerate participants.
+- [ ] Enforce scripted brute-force controls and generic login failure response, with concurrent attempts and session invalidation tests.
+- [ ] Record platform benchmark, screenshots (synthetic only), outcome PASS/FAIL and owner approval. A failed critical item = **NO-GO** with documented alternative path, no insecure workaround.

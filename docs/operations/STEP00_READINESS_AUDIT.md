@@ -131,3 +131,12 @@
 - An explicit **username/role/competition CSV** has been prepared at `examples/synthetic/initial_internal_accounts_13.csv`.
 - It contains only approved account *identifiers* and planned scopes; it includes **no password/hash/token/email** and does not provision real accounts.
 - Use it for tests in STEP 01 only after secure implementation is approved; activate the required 2–3 judges per competition before judging begins.
+
+
+## 11. GAS/OOP engineering readiness review (2026-10-18)
+
+- ADR-0004 adopted as OOP modular-monolith **design**: domain/application/ports/GAS adapters, typed source with GAS-compatible bundling, minimal entrypoints, no server-only Node/browser APIs, per-request authorization, validated DTOs, locked write operations, unit/contract/mobile testing.
+- Official GAS V8 guide supports classes but not native ES modules, private class fields, or Node/browser crypto; `google.script.run` is asynchronous and all exposed functions require server authorization.
+- Password/KDF, session-token randomness and secure cookie handling in GAS are **UNPROVEN**, not an assumed security PASS. Security risks captured in `docs/security/AUTH_THREAT_MODEL_V1.md`.
+- STEP 00 status remains `IN_PROGRESS / CONDITIONAL_NO_GO`; signed operational responsibilities and non-production test account/deployment approval remain to be resolved.
+- References: `docs/operations/STEP00_ENGINEERING_READINESS_GATE.md`, `docs/architecture/GAS_MODULE_CONTRACTS_V1.md`.

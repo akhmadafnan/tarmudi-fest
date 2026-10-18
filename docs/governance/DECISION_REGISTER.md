@@ -38,3 +38,14 @@
 3. No production deployment or actual participant records are authorized by this document.
 
 **Seed account manifest (no secrets):** [`examples/synthetic/initial_internal_accounts_13.csv`](../../examples/synthetic/initial_internal_accounts_13.csv). The manifest represents *planned accounts*, not operational credentials.
+
+
+## Engineering baseline supplement — 2026-10-18
+
+- **ENG-01:** OOP modular monolith, separated domain/application/ports/infrastructure/GAS adapters, composition root, class dependencies via explicit constructor injection (design baseline; no app code yet).
+- **ENG-02:** TypeScript strict as source candidate, reproducible GAS-compatible bundle with no native server `import/export`/unsupported class features. Exact build tools pinned after engineering environment setup.
+- **ENG-03:** All callable server entrypoints deny by default and validate session/role/branch on each privileged action. Client UI and suffix `_` are not authorization boundaries.
+- **ENG-04:** Pure-domain unit tests, GAS integration tests, contract tests for blind judging, concurrency tests and mobile E2E required before release.
+- **ENG-05:** Password hashing, CSPRNG and session transport on GAS **NOT APPROVED YET**; STEP 01 AUTH-GATE remains mandatory and can produce NO-GO.
+
+These are engineering controls supporting PRD V1.5, **not changes** to accepted competition rules, existing usernames or the locked product baseline. Supporting docs: [ADR-0004](../architecture/ADR-0004-oop-gas-modular-monolith.md) and [STEP 00 engineering review](../operations/STEP00_ENGINEERING_READINESS_GATE.md).
