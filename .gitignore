@@ -1,0 +1,41 @@
+# Secrets and environment configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+credentials*.json
+service-account*.json
+client_secret*.json
+.token*
+.clasp.json
+.clasprc.json
+
+# Sensitive event operations and real data
+data/
+private/
+backups/
+exports/
+production/
+secrets/
+*.sqlite
+*.db
+*.log
+*participants*real*.csv
+*registrations*real*.xlsx
+
+# Build/editor/temp
+node_modules/
+dist/
+build/
+coverage/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tmp
+*.bak
+
+# The checked-in docs are public-safe design material only.
