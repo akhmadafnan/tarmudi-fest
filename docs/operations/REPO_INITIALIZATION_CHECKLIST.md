@@ -16,7 +16,7 @@
 - [x] Updated STEP 00 audit with remote URL and checked commit SHA.
 
 ## Further STEP 00 operational preparation
-- [ ] Obtain **sanitized** sample Excel headers and synthetic records.
+- [x] Create and validate synthetic import template (30 fictional participants, 10/cabang) and publish the contract/CSV fixture; real enrollment Excel deferred until the app is ready.
 - [x] Designate personal Google account of the product owner as owner of Apps Script/Sheets/Drive (**decision only; resource provisioning pending**).
 - [ ] Arrange independent test Gmail accounts and one unauthorized test account for STEP 01.
 - [ ] Record responsibility for privacy notices, judge count and Juknis addenda.
