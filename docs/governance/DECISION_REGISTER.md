@@ -49,3 +49,12 @@
 - **ENG-05:** Password hashing, CSPRNG and session transport on GAS **NOT APPROVED YET**; STEP 01 AUTH-GATE remains mandatory and can produce NO-GO.
 
 These are engineering controls supporting PRD V1.5, **not changes** to accepted competition rules, existing usernames or the locked product baseline. Supporting docs: [ADR-0004](../architecture/ADR-0004-oop-gas-modular-monolith.md) and [STEP 00 engineering review](../operations/STEP00_ENGINEERING_READINESS_GATE.md).
+
+
+## 2026-10-18 — Authorized authentication provider amendment
+
+- **AUTH-PROVIDER-01:** Firebase Authentication **Spark (no-cost)** selected by owner for internal login. **Approved as provider choice**, not as security/pass or created resource.
+- **AUTH-PROVIDER-02:** Keep 13 username/password user experience. GAS remains business backend and private Sheet/Drive controller.
+- **AUTH-PROVIDER-03:** Verify Firebase ID token server-side on every privileged GAS request, then map verified Firebase UID to private role/branch assignment. Test `accounts:lookup` endpoint with project-specific key; never trust browser-supplied role/username.
+- **AUTH-PROVIDER-04:** Initial password provisioning/reset remains owner-controlled, unique, private. Firebase synthetic email alias design requires test, because no Gmail accounts should be created for the 13 staff users.
+- **AUTH-PROVIDER-05:** [ADR-0005](../architecture/ADR-0005-firebase-auth-spark.md) supersedes proposed **GAS-native password hashing and sessions** in ADR-0003; all underlying security requirements remain mandatory. AUTH-GATE still NOT PASSED.

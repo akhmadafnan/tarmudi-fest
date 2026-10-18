@@ -56,3 +56,22 @@ Show whether **13 pre-provisioned username/password accounts** can securely auth
 - [ ] Verify that staff/judges never gain direct Sheets/Drive permissions; public endpoints are anonymous read-only and cannot be used to enumerate participants.
 - [ ] Enforce scripted brute-force controls and generic login failure response, with concurrent attempts and session invalidation tests.
 - [ ] Record platform benchmark, screenshots (synthetic only), outcome PASS/FAIL and owner approval. A failed critical item = **NO-GO** with documented alternative path, no insecure workaround.
+
+
+## Amendment: Firebase Spark provider selected by owner (18 October 2026)
+
+**New preferred experiment:** Firebase email/password identity provider; GAS accepts only validated Firebase ID tokens and resolves UID to a private role/cabang map. Password KDF and Firebase token issuance are delegated to the managed Firebase service. **The old plan to implement custom password KDF in GAS is an evaluated fallback, NOT the preferred implementation.** See ADR-0005.
+
+| ID | New verification | PASS requirement |
+|---|---|---|
+| FB-01 | Firebase Spark project & provider | Free Spark selected, Email/Password enabled, no Blaze/billing |
+| FB-02 | Two dummy users + UI login | Username-only UI maps uniquely, Firebase returns ID token on phone/HTMLService |
+| FB-03 | Token verification from GAS | Genuine project's token accepted, tampered/foreign/expired token rejected |
+| FB-04 | Verified UID→private RBAC | Unauthorized UID, wrong branch, disabled user denied server-side |
+| FB-05 | Browser session | Memory-only persistence and logout/revocation test; no refresh tokens in localStorage/log |
+| FB-06 | 13-user provisioning | 1 Admin/3 Registration/9 Judges, unique private passwords, no direct Sheet share |
+| FB-07 | Disabled/password changed | Revoke strategy tested; no stale privileges after account deactivation |
+| FB-08 | Browser anonymity | Public results work without Firebase login; public cannot write |
+| FB-09 | Quotas/latency | Firebase verification and GAS workloads acceptable under realistic simulated load |
+
+**No app/business feature implementation starts before mandatory tests PASS.** No claim that adopting Firebase by itself solves role authorization, token safety, or GAS iframe limitations.

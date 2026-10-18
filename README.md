@@ -11,7 +11,7 @@ A proposed open-source, mobile-first competition platform inspired by the operat
 - Judges never receive participant names or school affiliations while judging.
 - Judges score **integer points from 0 to each criterion maximum**; the total maximum is 100 per judge, then the system averages required judges' totals.
 - Public interim results use **participant numbers only**. Names/schools are published only after branch approval and appropriate privacy checks.
-- Intended primary stack: **Google Apps Script + Sheets + Drive/Docs**, pending **STEP 01 AUTH-GATE** proving secure password hashing, sessions and branch-specific server authorization. The project owner's personal Google account owns infrastructure but is **not** the staff/judge login.
+- Intended primary stack: **Google Apps Script + Sheets + Drive/Docs**, pending **STEP 01 AUTH-GATE** verifying Firebase Authentication Spark username/password login, GAS server-side Firebase ID-token validation and branch-specific authorization. The project owner's personal Google account owns infrastructure but is **not** the staff/judge login.
 - Visual direction: **mobile-first Neo-Brutalism**.
 
 The planned 13 internal usernames and roles are also available in [`examples/synthetic/initial_internal_accounts_13.csv`](examples/synthetic/initial_internal_accounts_13.csv) (**identifiers only; not live accounts or passwords**).
