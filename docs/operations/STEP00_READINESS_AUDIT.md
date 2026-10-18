@@ -35,7 +35,7 @@
 |---|---|---|---|---|
 | IN-01 | Sample Excel export (headers plus dummy/de-identified rows) | map fields, stable IDs, deduplication | BLOCKER for STEP 02 | OPEN |
 | IN-02 | Actual admin and operator/judge account role assignment and branch plan | check authorization semantics | IMPORTANT; may initially use dummy Gmail accounts for STEP 01 | OPEN |
-| IN-03 | Google account that will own GAS deployment, Sheet, Drive | ownership and permissions | BLOCKER for STEP 01 | OPEN |
+| IN-03 | Personal Google account of project owner will own GAS deployment, Sheet, Drive | ownership and permissions | BLOCKER for STEP 01 | DECIDED; actual Google resources not yet provisioned |
 | IN-04 | Decision: repository ownership/slug, code copyright holder, MIT license approval | public open-source creation | DECIDED | CLOSED (personal, MIT, slug agreed); initial GitHub repo creation VERIFIED |
 | IN-05 | Actual judges per branch (2 or 3), policy addendum if Juknis conflicts | valid results, approvals | BLOCKER before judging | OPEN |
 | IN-06 | Event logo, trademark permission, branding assets | design and legally reusable sample assets | IMPORTANT | OPEN |
@@ -76,7 +76,7 @@
 4. Repo slug, owner and license/copyright decided; public repo initialized with correct documentation and secret exclusions.
 5. Open issues, risks and sponsor's decision-maker recorded; responsibilities for Juknis amendments and data privacy assigned.
 
-**Current decision:** `CONDITIONAL_NO_GO`. MIT license and public-repository governance have been approved; starter package is prepared, but the repository telah dibuat, tetapi Google deployment owner remains unknown, and required STEP 00 operational inputs remain open. **Do not start STEP 01 until gate conditions are met**, except planning the AUTH-GATE test protocol.
+**Current decision:** `CONDITIONAL_NO_GO`. MIT license and public-repository governance have been approved; starter package is prepared, but the repository and the personal Google deployment owner have been decided; other required STEP 00 operational inputs remain open. **Do not start STEP 01 until gate conditions are met**, except planning the AUTH-GATE test protocol.
 
 **2026-10-18 update:** Connected GitHub app verified account `akhmadafnan`; sebelum repository dibuat, target sempat menghasilkan NOT_FOUND; kini repository terverifikasi Public. Laptop GitHub CLI version 2.102.0 installed but `gh auth status` returned not logged in. Repository dibuat pengguna melalui GitHub UI; initial README sudah berhasil di-commit. Dokumen lainnya diunggah pada pembaruan berikutnya. No source code or deployment created.
 
@@ -86,7 +86,7 @@
 - Connected repository administrator permissions: confirmed.
 - Initial README commit: `1e512e61b1b8c77de3bb229f1c21d3f5610bd0f5`.
 - MIT license / personal copyright approved by project owner.
-- **STEP 00 remains IN_PROGRESS** because Google deployment owner, Excel schema, test account arrangements and operational privacy/Juknis responsibilities remain open.
+- **STEP 00 remains IN_PROGRESS** because Excel schema, test account arrangements and operational privacy/Juknis responsibilities remain open. Google deployment ownership is now assigned to the product owner's personal Google account; resources have not been created or verified.
 - This is not evidence that the app is deployed, or that Gmail authentication has been validated.
 
 
@@ -97,4 +97,13 @@
 - 19 files exist; essential README, LICENSE, locked PRD, SECURITY and CONTRIBUTING are present.
 - Working branch `develop` was created at the same documentation commit.
 - Targeted checks found no real participant phone numbers, Gmail addresses or credential patterns in critical public files.
-- Repository bootstrap: **PASS**. Overall STEP 00: **IN_PROGRESS / CONDITIONAL_NO_GO** pending owner Google account, safe Excel schema/sample, authorization test accounts and other operational handover decisions.
+- Repository bootstrap: **PASS**. Overall STEP 00: **IN_PROGRESS / CONDITIONAL_NO_GO** pending safe Excel schema/sample, authorization test accounts and other operational handover decisions. Google deployment ownership has been decided.
+
+## 8. Google deployment ownership decision (2026-10-18)
+
+- **DECIDED:** Use the project owner's personal Google account as owner of Apps Script, Google Sheets and Google Drive production resources.
+- This is **ownership of future resources only**, not evidence that any resource exists, was connected, shared or deployed.
+- Keep exact Gmail address, IDs of Sheets/Script/Drive, tokens, OAuth client secrets and access-control lists outside this public repository.
+- The application will still use individual personal Gmail accounts for assigned staff/judges, with server-enforced branch scopes and a separate anonymous public read surface, subject to STEP 01 AUTH-GATE verification.
+- **Continuity risk:** production resources depend on one personal account. Before go-live, configure secure account recovery and private backup/export plus an emergency operations handover plan, without granting uncontrolled access to participant identities.
+- **IN-03 disposition:** OWNER_DECIDED; provisioning/permissions validation deferred to STEP 01. STEP 00 overall **IN_PROGRESS / CONDITIONAL_NO_GO** until remaining gate inputs are addressed.
