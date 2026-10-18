@@ -17,7 +17,7 @@
 
 ## Further STEP 00 operational preparation
 - [ ] Obtain **sanitized** sample Excel headers and synthetic records.
-- [ ] Designate Google account owning Apps Script/Sheets/Drive.
+- [x] Designate personal Google account of the product owner as owner of Apps Script/Sheets/Drive (**decision only; resource provisioning pending**).
 - [ ] Arrange independent test Gmail accounts and one unauthorized test account for STEP 01.
 - [ ] Record responsibility for privacy notices, judge count and Juknis addenda.
 - [ ] Keep original event assets and production data out of public GitHub.
