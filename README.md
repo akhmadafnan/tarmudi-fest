@@ -2,7 +2,7 @@
 
 > **Status: STEP 00 / documentation-only. No application source code or production deployment yet.**
 
-A proposed open-source, mobile-first competition platform inspired by the operating requirements of Tarmudi Fest 2026. The intended platform covers participant check-in, unique start numbers, Google-account-based access, blind judging by participant number, configurable direct-point scoring, provisional leaderboards, official result approval, and event minutes/PDF publication.
+A proposed open-source, mobile-first competition platform inspired by the operating requirements of Tarmudi Fest 2026. The intended platform covers participant check-in, unique start numbers, pre-provisioned internal username/password access, blind judging by participant number, configurable direct-point scoring, provisional leaderboards, official result approval, and event minutes/PDF publication.
 
 ## Scope and product baseline
 
@@ -11,14 +11,14 @@ A proposed open-source, mobile-first competition platform inspired by the operat
 - Judges never receive participant names or school affiliations while judging.
 - Judges score **integer points from 0 to each criterion maximum**; the total maximum is 100 per judge, then the system averages required judges' totals.
 - Public interim results use **participant numbers only**. Names/schools are published only after branch approval and appropriate privacy checks.
-- Intended primary stack: **Google Apps Script + Sheets + Drive/Docs**, pending **STEP 01 AUTH-GATE** proving safe Google sign-in for personal Gmail accounts and private data access.
+- Intended primary stack: **Google Apps Script + Sheets + Drive/Docs**, pending **STEP 01 AUTH-GATE** proving secure password hashing, sessions and branch-specific server authorization. The project owner's personal Google account owns infrastructure but is **not** the staff/judge login.
 - Visual direction: **mobile-first Neo-Brutalism**.
 
-The authoritative Indonesian product specification is in [`docs/product/PRD_TARMUDI_FEST_V1.4.md`](docs/product/PRD_TARMUDI_FEST_V1.4.md). The detailed STEP 00 readiness register is in [`docs/operations/STEP00_READINESS_AUDIT.md`](docs/operations/STEP00_READINESS_AUDIT.md).
+The authoritative Indonesian product specification is in [`docs/product/PRD_TARMUDI_FEST_V1.5.md`](docs/product/PRD_TARMUDI_FEST_V1.5.md) (active). V1.4 remains [archived](docs/product/PRD_TARMUDI_FEST_V1.4.md) for audit history. Identity decisions: [`DECISION_REGISTER.md`](docs/governance/DECISION_REGISTER.md), [`ADR-0003`](docs/architecture/ADR-0003-internal-authentication.md). The detailed STEP 00 readiness register is in [`docs/operations/STEP00_READINESS_AUDIT.md`](docs/operations/STEP00_READINESS_AUDIT.md).
 
 ## Repository status
 
-This template intentionally contains documentation and GitHub collaboration scaffolding only. **Do not treat it as a working or secure implementation.** There is no authentication flow, app module, deployment, user data, or connection to Google in this repository.
+This template intentionally contains documentation and GitHub collaboration scaffolding only. **Do not treat it as a working or secure implementation.** There is no authentication flow, provisioned login credential, app module, deployment, production user data, or connection to Google in this repository. The 13 account usernames in the PRD are placeholders for future secure provisioning, not real accounts.
 
 ## Open-source and privacy policy
 
@@ -34,6 +34,6 @@ Contributions are welcome under the repository MIT License. Please read [`CONTRI
 
 ## Roadmap
 
-`STEP 00` audit and repository preparation → `STEP 01` Gmail AUTH-GATE proof of concept → `STEP 02` data structure → `STEP 03` check-in → `STEP 04` Admin scoring configuration → `STEP 05` mobile blind judging → `STEP 06` results/public interim leaderboard → `STEP 07` approval/identity publication → `STEP 08` official minutes/PDF → `STEP 09` UAT → `STEP 10` production release and archive.
+`STEP 00` audit and repository preparation → `STEP 01` internal password/session AUTH-GATE proof of concept → `STEP 02` data structure → `STEP 03` check-in → `STEP 04` Admin scoring configuration → `STEP 05` mobile blind judging → `STEP 06` results/public interim leaderboard → `STEP 07` approval/identity publication → `STEP 08` official minutes/PDF → `STEP 09` UAT → `STEP 10` production release and archive.
 
 No later STEP may be marked PASS unless the earlier gate has passed. See the locked PRD for acceptance tests.

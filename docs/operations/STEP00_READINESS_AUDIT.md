@@ -3,24 +3,24 @@
 **Document:** TF26-STEP00-001  
 **Status:** `IN_PROGRESS / CONDITIONAL_NO_GO`  
 **Date:** 2026-10-18  
-**Product baseline:** PRD V1.4 LOCKED  
+**Product baseline:** PRD V1.5 LOCKED (authentication supersedes V1.4; V1.4 archived)  
 **Scope:** preparation, source inventory, open-source repository governance, missing inputs, and STEP 01 entry requirements. **No app code, deployment, or production-data changes.**
 
 ## 1. Facts verified
 
 | ID | Fact or source | Status | Notes |
 |---|---|---|---|
-| SRC-01 | Tarmudi Fest 2026 PRD V1.4 (18 Oct 2026) | VERIFIED | Authoritative product baseline; staged in `docs/product/`. |
+| SRC-01 | Tarmudi Fest 2026 PRD V1.5 (18 Oct 2026) | APPROVED FOR DOCUMENTATION | Active baseline; V1.4 archived unchanged in `docs/product/`. |
 | SRC-02 | Original Juknis Tarmudi Fest 2026 (7-page PDF) | REVIEWED (PRIVATE SOURCE) | Event date 24 Oct; 3 branches; public repository should NOT include unreviewed original PDF. Includes organizer contact details. |
 | SRC-03 | Google Form registrations are pre-existing | CONFIRMED AS REQUIREMENT | Actual export / column headers not yet provided. |
-| SRC-04 | Google login via personal Gmail | LOCKED REQUIREMENT | Technical implementation NOT yet validated. AUTH-GATE STEP 01. |
+| SRC-04 | Internal username/password, 13 seed users | LOCKED REQUIREMENT | Technical password/session implementation NOT yet validated. AUTH-GATE STEP 01; see ADR-0003. |
 | SRC-05 | Repo account | VERIFIED | GitHub connector identified `akhmadafnan`. |
 | SRC-06 | Repo name / owner / public / license | CREATED AND VERIFIED | `akhmadafnan/tarmudi-fest`, Public; MIT approved, personal copyright. Repository Public telah dibuat dan diverifikasi. |
 
 ## 2. Locked rules for implementation
 
 - Three separate branch assignments and sequential unique start numbers at check-in.
-- Personal Gmail accounts, configured by administrator; no public self-registration for staff/judges.
+- 13 internal pre-provisioned username/password accounts (1 Admin, 3 Registration, 9 Judges); no public self-registration; passwords individually generated and privately delivered only after proven-secure provisioning.
 - Blind judging: judge API must not return participant name or school.
 - Dynamic Admin scoring scheme versioning; **integer direct points 0..max**, sum of maxima **100**.
 - Scheme defaults: Mendongeng 25/25/20/15/15, Tahfidz 40/30/20/10, Mewarnai 25/25/25/25.
@@ -34,7 +34,7 @@
 | Code | Missing item | Why needed | Priority | Status |
 |---|---|---|---|---|
 | IN-01 | Synthetic import template approved as working baseline (30 fictional participants; 10 per branch) | fixed headers, IDs, replacements, deduplication; production data supplied only after app stabilizes | STEP 02 input contract satisfied with synthetic fixture; real mapping deferred | CLOSED (SYNTHETIC BASELINE) |
-| IN-02 | Actual admin and operator/judge account role assignment and branch plan | check authorization semantics | IMPORTANT; may initially use dummy Gmail accounts for STEP 01 | OPEN |
+| IN-02 | Initial user roles/branch assignments fixed as 13 usernames; actual personnel handover and secure provisioning pending | server-side role/cabang authorization | Design CLOSED; secure account issuance pending STEP 01 | PARTIAL (13-ACCOUNT SPECIFICATION) |
 | IN-03 | Personal Google account of project owner will own GAS deployment, Sheet, Drive | ownership and permissions | BLOCKER for STEP 01 | DECIDED; actual Google resources not yet provisioned |
 | IN-04 | Decision: repository ownership/slug, code copyright holder, MIT license approval | public open-source creation | DECIDED | CLOSED (personal, MIT, slug agreed); initial GitHub repo creation VERIFIED |
 | IN-05 | Actual judges per branch (2 or 3), policy addendum if Juknis conflicts | valid results, approvals | BLOCKER before judging | OPEN |
@@ -49,8 +49,8 @@
 
 | Risk | Level | Safe STEP 00 action |
 |---|---|---|
-| Personal Gmail identity cannot be safely recognized by GAS web app | CRITICAL | STEP 01 AUTH-GATE is mandatory; reject insecure workarounds. |
-| GitHub public repository leaks minors' data, source export, Google IDs, tokens | CRITICAL | Publish code/docs only, placeholders and synthetic fixtures; keep operational data outside repo. |
+| GAS cannot securely hash passwords, provision sessions or throttle logins within quota/browser constraints | CRITICAL | STEP 01 AUTH-GATE is mandatory; reject insecure custom auth shortcuts. |
+| GitHub public repository leaks minors' data, production hashes, initial passwords or session tokens | CRITICAL | Publish docs/code and synthetic fixtures only; keep credentials and operations outside repo. |
 | Third-party assets mistakenly represented as MIT-licensed | HIGH | MIT approval recorded, `LICENSE` included; exclude original logo/Juknis and external proprietary assets. |
 | Event-brand intellectual-property rights confused with MIT code license | MEDIUM | Trademark/logo excluded unless separately authorized. |
 | Juknis says 3 judges but app permits 2 | HIGH | Written organizer approval/addendum if running with 2. |
@@ -72,11 +72,11 @@
 
 1. Locked PRD reviewed and available.
 2. Sources inventoried; safe synthetic participant-import fixture and documented five-column import contract accepted for development. The event owner will later supply real participant data **privately** once the app is stable; no actual child data pushed to public GitHub.
-3. Owner/deployer Google account identified; STEP 01 test-account access defined.
+3. Owner/deployer personal Google account identified; 13 internal test username/role/cabang contract defined, and STEP 01 secure-provisioning protocol agreed (actual passwords not created).
 4. Repo slug, owner and license/copyright decided; public repo initialized with correct documentation and secret exclusions.
 5. Open issues, risks and sponsor's decision-maker recorded; responsibilities for Juknis amendments and data privacy assigned.
 
-**Current decision:** `CONDITIONAL_NO_GO`. MIT license and public-repository governance have been approved; starter package is prepared, but the repository and the personal Google deployment owner have been decided; other required STEP 00 operational inputs remain open. **Do not start STEP 01 until gate conditions are met**, except planning the AUTH-GATE test protocol.
+**Current decision:** `CONDITIONAL_NO_GO`. MIT license and public-repository governance have been approved; starter package is prepared, but the repository and the personal Google deployment owner have been decided; other required STEP 00 operational inputs remain open. **Do not start STEP 01 until gate conditions are met**, except planning the revised internal-account AUTH-GATE protocol.
 
 **2026-10-18 update:** Connected GitHub app verified account `akhmadafnan`; sebelum repository dibuat, target sempat menghasilkan NOT_FOUND; kini repository terverifikasi Public. Laptop GitHub CLI version 2.102.0 installed but `gh auth status` returned not logged in. Repository dibuat pengguna melalui GitHub UI; initial README sudah berhasil di-commit. Dokumen lainnya diunggah pada pembaruan berikutnya. No source code or deployment created.
 
@@ -87,7 +87,7 @@
 - Initial README commit: `1e512e61b1b8c77de3bb229f1c21d3f5610bd0f5`.
 - MIT license / personal copyright approved by project owner.
 - **STEP 00 remains IN_PROGRESS** because test account arrangements and operational privacy/Juknis responsibilities remain open. A 30-row synthetic participant template is now the approved baseline import schema. Google deployment ownership is now assigned to the product owner's personal Google account; resources have not been created or verified.
-- This is not evidence that the app is deployed, or that Gmail authentication has been validated.
+- This is not evidence that the app is deployed, or that internal-account password/session authentication has been validated.
 
 
 ### Documentation repository publication verified
@@ -104,7 +104,7 @@
 - **DECIDED:** Use the project owner's personal Google account as owner of Apps Script, Google Sheets and Google Drive production resources.
 - This is **ownership of future resources only**, not evidence that any resource exists, was connected, shared or deployed.
 - Keep exact Gmail address, IDs of Sheets/Script/Drive, tokens, OAuth client secrets and access-control lists outside this public repository.
-- The application will still use individual personal Gmail accounts for assigned staff/judges, with server-enforced branch scopes and a separate anonymous public read surface, subject to STEP 01 AUTH-GATE verification.
+- The application will use **internal username/password accounts** for Admin, Registration and Judges (ADR-0003); Google personal account ownership of the GAS/Sheets/Drive infrastructure is **unchanged**. Server-enforced branch scopes and separate anonymous public read surface remain mandatory, subject to STEP 01 AUTH-GATE verification.
 - **Continuity risk:** production resources depend on one personal account. Before go-live, configure secure account recovery and private backup/export plus an emergency operations handover plan, without granting uncontrolled access to participant identities.
 - **IN-03 disposition:** OWNER_DECIDED; provisioning/permissions validation deferred to STEP 01. STEP 00 overall **IN_PROGRESS / CONDITIONAL_NO_GO** until remaining gate inputs are addressed.
 
@@ -115,4 +115,13 @@
 - Contract and public synthetic CSV: [`ADR-0002-participant-import-contract.md`](../architecture/ADR-0002-participant-import-contract.md) and [`examples/synthetic/participants_tarmudi_fest_30.csv`](../../examples/synthetic/participants_tarmudi_fest_30.csv).
 - Future Admin flow: upload → preview → validate → confirm. Before any check-in or scores, allow audited whole-dataset replacement. **After check-in or scoring begins, destructive replacement must be blocked**, preserving start numbers and judge submissions.
 - No private production data is required for the current design phase. **IN-01 is CLOSED using synthetic baseline**; mapping of actual Google Form headers can be done during later private pilot onboarding, and must not require a code edit if Admin's template is followed.
-- The STEP 00 technical gate remains open on independent Gmail test identities, authorization responsibility and other operational concerns. No application code or deployment yet.
+- The STEP 00 technical gate remains open on secure internal-account provisioning test arrangements, authorization responsibility and other operational concerns. No application code or deployment yet.
+
+## 10. Internal authentication change request and documentation freeze (2026-10-18)
+
+- **Approved:** Replace Google/Gmail sign-in for internal users with **username/password** managed by application.
+- **Seed usernames:** `admin`; `reg-mdg`, `reg-thf`, `reg-mwn`; `juri-mdg-01..03`, `juri-thf-01..03`, `juri-mwn-01..03` = **13** account specifications. They have not been created.
+- **Owner infrastructure unchanged:** Google personal account of project owner owns Apps Script/Sheets/Drive.
+- **No insecure defaults:** per-user cryptographically secure temporary passwords, private delivery, forced first-use rotation, adaptive salted hashes, revocable sessions, server authorization, throttled authentication attempts. Feasibility in GAS to be demonstrated; if it cannot be secured, stop and seek approval for an alternative.
+- **Docs:** active `PRD_TARMUDI_FEST_V1.5.md`, `DECISION_REGISTER.md`, `ADR-0003-internal-authentication.md`, rewritten `STEP01_AUTH_GATE_PLAN.md`. V1.4 remains archive unchanged.
+- **Gate result:** repository documentation UPDATED, but overall STEP 00 remains **IN_PROGRESS / CONDITIONAL_NO_GO**; operational privacy/approvers, Juknis judge count, mobile/fallback details and account-bootstrap feasibility still pending. No business module code or deployment authorized.

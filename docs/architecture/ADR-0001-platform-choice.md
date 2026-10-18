@@ -1,34 +1,23 @@
-# ADR-0001 — Platform and Authentication Gate
+# ADR-0001 — Platform Choice (Authentication Section Superseded)
 
-**Status:** Proposed / technical feasibility NOT yet proven  
-**Product:** Tarmudi Fest V1.4
+**Status:** PLATFORM PROPOSAL STILL ACTIVE; ORIGINAL GOOGLE LOGIN CHOICE SUPERSEDED by [ADR-0003](ADR-0003-internal-authentication.md) on 2026-10-18.  
+**Product:** Tarmudi Fest PRD V1.5 (V1.4 archived)
 
-## Decision context
-The product targets no paid hosting/domain and no PHP. A single Google-based ecosystem is preferred. Admin/judges/registration staff must use **personal Gmail** accounts, while the public results page is anonymously readable. Judges must not gain direct read access to participant identity data or Google Sheets.
+## Architecture context
+Free/no-PHP hosting remains preferred. Candidate stack remains frontend HTML/CSS/JavaScript mobile-first Neo-Brutalism; Google Apps Script backend; Google Sheets private storage; Google Drive and Google Docs for minutes/PDF.
 
-## Candidate architecture
-- HTML/CSS/JavaScript mobile-first Neo-Brutalism frontend.
-- Google Apps Script as business-layer candidate.
-- Google Sheets data, Google Drive private documents, Google Docs PDF templates.
-- Server-verified Google account identity and server-enforced role/cabang assignments.
-- Separation of admin/judge/private data views from anonymous public snapshots.
+The original ADR-0001 proposed personal Gmail sign-in for staff/judges. **Do not implement that superseded proposal.** The approved internal login is **13 pre-provisioned username/password accounts** with server-side per-branch privileges (see ADR-0003). The project owner's personal Google account is only the GAS/Sheets/Drive owner. Public results remain anonymous and read-only until official publication.
 
-## No-go shortcuts
-- Do not rely on `Session.getActiveUser().getEmail()` for arbitrary personal Gmail addresses without proof.
-- Do not trust a client-supplied email, name, or role.
-- Do not share source Sheets or sensitive Drive folders with judges/public.
-- Do not authenticate by secret URL or shared password.
+## Persistent no-go shortcuts
+- No client-side-only password validation or trusted role parameters.
+- No shared/default hard-coded passwords, raw passwords or tokens in GitHub.
+- No sharing private source Sheets or Drive folders with staff/judges/public.
+- No secret-URL login, unaudited crypto, non-revocable sessions or implicit session safety claims.
 
-## STEP 01 must demonstrate
-1. Two personal Gmail accounts from different owners authenticate on phones.
-2. Identity is cryptographically verified server-side; unknown/disabled accounts rejected.
-3. Scoped branch permissions work, including attempted cross-branch access.
-4. Judge payload contains no participant names or school names.
-5. Public pages work anonymously but cannot write or access private data.
-6. Sessions expire/revoke; logout behavior is tested.
-7. No direct Sheets edit/view access is required by judges.
+## Technical decision gate
+STEP 01 must **prove** password hashing, secure provisioning, session lifecycle, brute-force protection and access isolation in the candidate platform. GAS may fail this gate; record evidence and obtain owner approval for an alternative before implementing business modules.
 
-If pure GAS fails, publish an evidence-based NO-GO and present a no-cost alternative for explicit sponsor approval. Do not silently switch architecture.
-
-## Documentation
-Product source of truth: `docs/product/PRD_TARMUDI_FEST_V1.4.md`, section I.
+## Governing sources
+- [Active PRD V1.5](../product/PRD_TARMUDI_FEST_V1.5.md)
+- [ADR-0003](ADR-0003-internal-authentication.md)
+- [STEP 01 test plan](../operations/STEP01_AUTH_GATE_PLAN.md)

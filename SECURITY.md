@@ -17,3 +17,8 @@ Use synthetic data only. Do not test vulnerabilities against live events, third-
 ## Security release gate
 
 The application must not be deployed for real judging without PASS on Gmail AUTH-GATE, branch-scoped authorization, blind-judging payload privacy, concurrency and final-score auditing as specified in PRD V1.4.
+
+
+## Internal-account credentials (PRD V1.5)
+
+The initial 13 usernames are a *public specification*, not actual credentials. Do not commit initial passwords, password hashes, password reset codes, session token values, login-attempt logs, recovery material, or privileged deployment identifiers. Never propose a global starter password. Vulnerability reports about identity/session security should be sent privately, not in GitHub issues.

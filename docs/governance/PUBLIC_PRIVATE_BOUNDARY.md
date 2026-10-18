@@ -2,7 +2,7 @@
 
 **Public GitHub may contain:** open-source application code once created; architectural documentation; public-facing design tokens where rights are cleared; synthetic test records; issue and PR templates; redacted/approved examples.
 
-**Must stay out of GitHub:** participant names, minors' school affiliations, source Google Form/Excel responses, parent contact details, letters proving enrollment, private school IDs or Drive files, administrator/judge personal Gmail allowlists, JWT/OAuth/client credentials, Google script IDs bound to private deployments, access tokens, backup exports, unpublished minutes, and production logs.
+**Must stay out of GitHub:** participant names, minors' school affiliations, source Google Form/Excel responses, parent contact details, letters proving enrollment, private school IDs or Drive files, internal account credentials or password hashes, session tokens, reset codes, administrator/judge identity rosters, OAuth/client credentials, Google script IDs bound to private deployments, access tokens, backup exports, unpublished minutes, and production logs.
 
 **Original Juknis PDF:** do not publish the original attachment by default because it contains direct contact information and may include copyrighted event assets. Request organizer approval and produce a properly redacted copy if required.
 
