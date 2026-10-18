@@ -14,7 +14,7 @@
 A reusable community-developed competition platform, originating from the Tarmudi Fest 2026 baseline.
 
 ## Creation
-The owner created the empty public repository. The connected GitHub integration verified administrator permissions. Initial README commit: `1e512e61b1b8c77de3bb229f1c21d3f5610bd0f5`. Remaining public documentation is staged for commit, subject to verification.
+The owner created the empty public repository. The connected GitHub integration verified administrator permissions. Initial README commit: `1e512e61b1b8c77de3bb229f1c21d3f5610bd0f5`. The documentation baseline was committed and verified on GitHub at `9b4ac243b416231a8f041b75342031e2f990c805`.
 
 ## Copyright and open-source boundary
 Original code and documentation owned by the maintainer are distributed under MIT. Third-party festival logos, school emblems, the original Juknis PDF, and event data about minors are excluded unless separately authorized. The MIT license does not transfer trademark rights.

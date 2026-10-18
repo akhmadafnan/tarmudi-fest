@@ -10,10 +10,10 @@
 ## Assistant verification
 - [x] Verified repository exists and connected GitHub account has write permission.
 - [x] Created the initial README commit.
-- [ ] Verify LICENSE, PRD, privacy/security/contribution docs after publishing.
-- [ ] Create and verify branch `develop` after the documentation commit.
-- [ ] Verify no real participant data, Gmail allowlists or secrets were committed.
-- [ ] Update STEP 00 audit with remote URL and checked commit SHA.
+- [x] Verified LICENSE, PRD, privacy/security/contribution docs after publishing.
+- [x] Created and verified branch `develop` from the documentation commit.
+- [x] Verified public-safe source and checked key uploaded files for personal data and credential patterns.
+- [x] Updated STEP 00 audit with remote URL and checked commit SHA.
 
 ## Further STEP 00 operational preparation
 - [ ] Obtain **sanitized** sample Excel headers and synthetic records.
