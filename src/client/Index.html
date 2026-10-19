@@ -316,7 +316,7 @@ async function tf26RefreshAuth(force){
       !Number.isFinite(expiry)||expiry<120)throw Error("AUTH_REQUIRED");
    TOKEN=id;TF26_REFRESH_TOKEN=refresh;TF26_TOKEN_EXPIRES_AT=Date.now()+expiry*1000;
   }catch(_){
-   if(epoch===TF26_SESSION_EPOCH)tf26ClearAuth();
+   if(epoch===TF26_SESSION_EPOCH){tf26ClearAuth();showLogin()}
    throw Error("AUTH_REQUIRED");
   }
  })();
@@ -342,6 +342,9 @@ async function call(name,args){
  if(response&&response.ok===false&&response.error==="AUTH_REQUIRED"){
   if(TOKEN===params[0])await tf26RefreshAuth(true);
   response=await tf26RawCall(name,[TOKEN,...args.slice(1)]);
+  if(response&&response.ok===false&&response.error==="AUTH_REQUIRED"){
+   tf26ClearAuth();showLogin();
+  }
  }
  return response;
 }
