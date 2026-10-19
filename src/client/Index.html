@@ -298,6 +298,39 @@ function drawAdminStandings(){
   }));
   if(!group.items.length)list.append(node("p",{class:"small"},["Belum ada hasil lengkap seluruh juri wajib."]));
   section.append(list);
+  const open=new Map();
+  for(const item of group.items.filter(x=>x.pendingDeliberation)){
+    const groupKey=item.meanScore.toFixed(2);
+    if(!open.has(groupKey))open.set(groupKey,[]);
+    open.get(groupKey).push(item.startNo);
+  }
+  for(const [score,numbers] of open){
+   if(numbers.length<2)continue;
+   const box=node("div",{class:"panel warn"},[
+    node("h3",null,["Musyawarah nilai seri • "+branches[group.competition]]),
+    node("p",{class:"small"},["Nomor seri: "+numbers.map(n=>String(n).padStart(3,"0")).join(", ")+". Masukkan urutan pemenang hasil musyawarah juri."])
+   ]);
+   const ordered=node("input",{placeholder:"Contoh: 2,1"});
+   ordered.value=numbers.join(",");
+   const reason=node("input",{placeholder:"Alasan keputusan dan berita acara dewan juri"});
+   reason.maxLength=500;
+   box.append(node("label",null,["Urutan nomor start setelah musyawarah"]),ordered,
+     node("label",null,["Alasan keputusan (minimal 15 karakter)"]),reason);
+   const save=node("button",{class:"green"},["Rekam keputusan musyawarah"]);
+   save.onclick=()=>{
+    const vals=ordered.value.split(",").map(x=>Number(x.trim()));
+    const sorted=a=>a.slice().sort((a,b)=>a-b).join(",");
+    if(vals.length!==numbers.length||new Set(vals).size!==numbers.length||
+       sorted(vals)!==sorted(numbers)||reason.value.trim().length<15){
+     msg("Urutan harus memuat semua nomor yang seri tepat satu kali, disertai alasan minimal 15 karakter.",true);
+     return;
+    }
+    if(!confirm("Rekam keputusan seri ini sesuai berita acara dewan juri?"))return;
+    submitAction("RESOLVE_TIE",{competition:group.competition,
+      orderedStartNumbers:vals,reason:reason.value.trim()},"Keputusan seri tersimpan dan diaudit.");
+   };
+   box.append(save);section.append(box);
+  }
  }
  return section;
 }
