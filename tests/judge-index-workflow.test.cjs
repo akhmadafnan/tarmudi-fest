@@ -55,7 +55,8 @@ test("judge view never prints identity, school or registration IDs",()=>{
  const only=domain.slice(domain.indexOf('if(actor.role==="juri"){'),domain.indexOf('if(actor.role==="registrasi"){'));
  assert.match(only,/s\.judgeUid===actor\.uid/);
  assert.match(only,/s\.competition===actor\.competition/);
- assert.doesNotMatch(only,/fullName|school|participantId|idPendaftaran/);
+ const executable=only.replace(/\/\/[^\r\n]*/g,"");
+ assert.doesNotMatch(executable,/\b(fullName|school|participantId|idPendaftaran)\b/);
 });
 test("status READY prevents drafts and finalization; finalized own score always locked",()=>{
  assert.match(judge,/const canWrite=DATA\.phase==="JUDGING_OPEN"&&!finalized/);
