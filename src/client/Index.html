@@ -255,6 +255,7 @@ body{overflow-x:hidden}
 "use strict";
 const CFG=<?!= publicConfig ?>;
 let TOKEN=null,IDENTITY=null,DATA=null,PUBLIC=false,BRANCH="THF",FILTER="";
+let TF26_REFRESH_TOKEN=null,TF26_TOKEN_EXPIRES_AT=0,TF26_REFRESH_INFLIGHT=null,TF26_SESSION_EPOCH=0;
 let REGISTRATION_BRANCH_FILTER="ALL";
 let NEW_CREDENTIALS=[];
 let TF26_TEST_JURY_CREDS=[];
@@ -276,11 +277,73 @@ function msg(message,isError){
  if(!message)el.classList.add("hidden");
 }
 function busy(on){$("loading").classList.toggle("hidden",!on)}
-function call(name,args){
+// Firebase ID tokens expire (normally after about one hour). Keep renewal
+// credentials only in this page's memory; never localStorage/sessionStorage.
+function tf26ClearAuth(){
+ TF26_SESSION_EPOCH++;
+ TOKEN=null;TF26_REFRESH_TOKEN=null;TF26_TOKEN_EXPIRES_AT=0;
+ TF26_REFRESH_INFLIGHT=null;
+}
+function tf26SaveAuth(payload){
+ const id=payload&&(payload.idToken||payload.id_token);
+ const refresh=payload&&(payload.refreshToken||payload.refresh_token);
+ const expiry=Number(payload&&(payload.expiresIn||payload.expires_in));
+ if(typeof id!=="string"||!id||typeof refresh!=="string"||!refresh||
+    !Number.isFinite(expiry)||expiry<120)throw Error("AUTH_REQUIRED");
+ TF26_SESSION_EPOCH++;
+ TOKEN=id;TF26_REFRESH_TOKEN=refresh;TF26_TOKEN_EXPIRES_AT=Date.now()+expiry*1000;
+}
+async function tf26RefreshAuth(force){
+ if(!TOKEN||!TF26_REFRESH_TOKEN)throw Error("AUTH_REQUIRED");
+ if(!force&&Date.now()+90000<TF26_TOKEN_EXPIRES_AT)return;
+ if(TF26_REFRESH_INFLIGHT){await TF26_REFRESH_INFLIGHT;return}
+ const epoch=TF26_SESSION_EPOCH;
+ const savedRefresh=TF26_REFRESH_TOKEN;
+ const work=(async()=>{
+  try{
+   const response=await fetch(
+    "https://securetoken.googleapis.com/v1/token?key="+encodeURIComponent(CFG.apiKey),{
+     method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
+     body:"grant_type=refresh_token&refresh_token="+encodeURIComponent(savedRefresh)
+    });
+   if(!response.ok)throw Error("AUTH_REQUIRED");
+   const payload=await response.json();
+   if(epoch!==TF26_SESSION_EPOCH)throw Error("AUTH_REQUIRED");
+   const id=payload&&payload.id_token;
+   const refresh=payload&&payload.refresh_token;
+   const expiry=Number(payload&&payload.expires_in);
+   if(typeof id!=="string"||!id||typeof refresh!=="string"||!refresh||
+      !Number.isFinite(expiry)||expiry<120)throw Error("AUTH_REQUIRED");
+   TOKEN=id;TF26_REFRESH_TOKEN=refresh;TF26_TOKEN_EXPIRES_AT=Date.now()+expiry*1000;
+  }catch(_){
+   if(epoch===TF26_SESSION_EPOCH)tf26ClearAuth();
+   throw Error("AUTH_REQUIRED");
+  }
+ })();
+ TF26_REFRESH_INFLIGHT=work;
+ try{await work}finally{if(TF26_REFRESH_INFLIGHT===work)TF26_REFRESH_INFLIGHT=null}
+}
+function tf26RawCall(name,args){
  return new Promise((resolve,reject)=>{
-  if(!google||!google.script||!google.script.run){reject(Error("NO_SERVER"));return}
+  if(typeof google==="undefined"||!google.script||!google.script.run){
+   reject(Error("NO_SERVER"));return
+  }
   google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name](...args);
  });
+}
+async function call(name,args){
+ const protectedAction=["apiApp","apiCommand","apiProvisionAccount"].includes(name);
+ if(!protectedAction)return tf26RawCall(name,args);
+ await tf26RefreshAuth(false);
+ const params=[TOKEN,...args.slice(1)];
+ let response=await tf26RawCall(name,params);
+ // Retry once ONLY when the authenticated backend explicitly denied an
+ // expired token, never on an uncertain network/write failure.
+ if(response&&response.ok===false&&response.error==="AUTH_REQUIRED"){
+  if(TOKEN===params[0])await tf26RefreshAuth(true);
+  response=await tf26RawCall(name,[TOKEN,...args.slice(1)]);
+ }
+ return response;
 }
 function describe(code){
  return {
@@ -1243,12 +1306,12 @@ $("login-form").onsubmit=async(e)=>{
   if(!payload.idToken)throw Error("AUTH_REQUIRED");
   const checked=await call("apiWhoAmI",[payload.idToken]);
   if(!checked||checked.ok!==true)throw Error("AUTH_REQUIRED");
-  TOKEN=payload.idToken;
+  tf26SaveAuth(payload);
   await dashboard();
- }catch(e){TOKEN=null;showLogin();msg("Username atau password tidak valid / tidak memiliki izin.",true)}
+ }catch(e){tf26ClearAuth();showLogin();msg("Username atau password tidak valid / tidak memiliki izin.",true)}
  finally{busy(false)}
 };
-$("logout").onclick=()=>{TOKEN=null;IDENTITY=null;DATA=null;FILTER="";REGISTRATION_BRANCH_FILTER="ALL";JUDGE_SELECTED_NUMBER=null;JUDGE_SEARCH="";JUDGE_FILTER="ALL";for(const code of ["MDG","THF","MWN"]){TF26_ADMIN_STANDINGS_SEARCH[code]="";TF26_ADMIN_STANDINGS_PAGE[code]=1;}$("password").value="";showLogin();msg("Anda berhasil keluar.");};
+$("logout").onclick=()=>{tf26ClearAuth();IDENTITY=null;DATA=null;FILTER="";REGISTRATION_BRANCH_FILTER="ALL";JUDGE_SELECTED_NUMBER=null;JUDGE_SEARCH="";JUDGE_FILTER="ALL";for(const code of ["MDG","THF","MWN"]){TF26_ADMIN_STANDINGS_SEARCH[code]="";TF26_ADMIN_STANDINGS_PAGE[code]=1;}$("password").value="";showLogin();msg("Anda berhasil keluar.");};
 $("refresh").onclick=dashboard;
 $("view-public").onclick=publicView;
 $("back-admin").onclick=dashboard;
