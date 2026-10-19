@@ -328,10 +328,9 @@ function drawAdmin(root){
  }));
  const importer=drawImporter();
  const standings=drawAdminStandings();
- const accounts=drawAccountProvisioner();
  const uatJudges=drawUatTahfidzJudges();
  const entries=drawRegistration(null,true);
- render(root,[head,stats,uatJudges,accounts,standings,importer,entries]);
+ render(root,[head,stats,uatJudges,standings,importer,entries]);
 }
 const TF26_PLANNED_USERS=[
  {username:"reg-mdg",role:"registrasi",competition:"MDG"},
