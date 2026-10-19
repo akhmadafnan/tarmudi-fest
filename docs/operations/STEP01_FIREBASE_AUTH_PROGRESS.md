@@ -44,3 +44,18 @@
 - No change to scoring/publishing/child privacy rules in PRD V1.5.
 
 **Gate decision:** **NO GO** for production release. Continue AUTH-GATE only after CLI owner sign-in; do not silently lower security. 
+
+
+## 2026-10-19 live follow-up — owner GAS authorization and Firebase setup
+
+- User confirmed running `doGet` and authorizing the owner GAS project.
+- Independent unauthenticated HTTP GET to latest version-4 test deployment returned **HTTP 200**; HTML contained Tarmudi Fest / login content. **Previous 403 access blocker is resolved.** This is a page-load PASS only, not login PASS.
+- Firebase CLI `login:list` confirmed owner account authorized.
+- Firebase project `tarmudi-fest-2026-afnan` created; Firebase Web App `Tarmudi Fest Web Login` created.
+- Firebase CLI Auth-provider deployment reported **Email/Password enabled** and successful completion.
+- Firebase Web SDK configuration fetched locally to a private file on the authorized workstation. No OAuth refresh tokens/passwords or user credentials added to GitHub.
+- Live REST negative checks: `accounts:lookup` with invalid Firebase token -> **HTTP 400**; `signInWithPassword` for nonexistent user -> **HTTP 400**. These show correct rejection but do not test valid sign-in.
+- Firebase Auth CLI export inspected current user count = **0**. Two synthetic users (Admin and one Tahfidz Judge) are required for the next positive test. User has been asked to add them in Firebase Console with unique private credentials. Firebase users and role assignments are still **NOT PROVISIONED** as of this evidence.
+- GAS script property configuration and verified UID allowlist remain pending. Live Firebase ID token roundtrip through GAS and browser iframe/mobiles **NOT TESTED**. No production release authorization.
+
+**Updated decision:** Web App HTTP access **PASS**; Firebase Auth provider setup **PASS**; AUTH-GATE overall **IN_PROGRESS / NO PRODUCTION GO** until valid-user + RBAC + negative/security tests pass.
