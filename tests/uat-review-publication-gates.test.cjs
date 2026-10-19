@@ -160,7 +160,7 @@ test("UAT-REVIEW-07: choosing just one sixth-place winner resolves a 6–7 tie, 
 });
 test("UAT-REVIEW-08: two separate top-six ties require two decisions before official release",()=>{
  const X=[38,24,18,10],Y=[37,25,18,10];
- const f=closeToReview(fixture([X,X,Y,Y,D,E,LOW],{ownerApproved:true}));
+ const f=closeToReview(fixture([X,X,Y,Y,[36,25,18,10],[35,25,18,10],LOW],{ownerApproved:true}));
  const before=f.service.publicResults("THF").results;
  assert.equal(before[0].meanScore,before[2].meanScore);
  assert.deepEqual(before.filter(x=>x.tieGroupPosition===1).map(x=>x.startNo).join(","),"1,2");
