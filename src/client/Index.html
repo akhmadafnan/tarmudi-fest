@@ -507,6 +507,22 @@ function drawAdminStandings(){
 function tf26HasStartNumber(value){
  return Number.isInteger(value)&&value>0;
 }
+function tf26DisplayCompetitionCode(code){
+  if(!["MDG","THF","MWN"].includes(code))return "TF26";
+  return "TF26-"+code;
+}
+function tf26RegistrationOrder(a,b){
+  const branchesOrder={MDG:0,THF:1,MWN:2};
+  const branchA=Object.prototype.hasOwnProperty.call(branchesOrder,a.competition)?branchesOrder[a.competition]:99;
+  const branchB=Object.prototype.hasOwnProperty.call(branchesOrder,b.competition)?branchesOrder[b.competition]:99;
+  if(branchA!==branchB)return branchA-branchB;
+  const arrivedA=tf26HasStartNumber(a.startNo);
+  const arrivedB=tf26HasStartNumber(b.startNo);
+  if(arrivedA!==arrivedB)return arrivedA?-1:1;
+  if(arrivedA && arrivedB && a.startNo!==b.startNo)return a.startNo-b.startNo;
+  const nameOrder=String(a.fullName||"").localeCompare(String(b.fullName||""),"id",{sensitivity:"base"});
+  return nameOrder||String(a.id||"").localeCompare(String(b.id||""));
+}
 function drawRegistration(root,asAdmin){
  const wrap=node("section",{class:"panel registration-panel"},[]);
  wrap.append(node("h2",null,["Registrasi ulang peserta"]));
@@ -548,8 +564,9 @@ function drawRegistration(root,asAdmin){
   const query=FILTER.trim().toLocaleLowerCase("id-ID");
   const filtered=all.filter(p=>{
    if(asAdmin&&currentBranch!=="ALL"&&p.competition!==currentBranch)return false;
-   return [p.fullName,p.school,p.id].some(x=>String(x||"").toLocaleLowerCase("id-ID").includes(query));
-  });
+   return [p.fullName,p.school,p.id,tf26DisplayCompetitionCode(p.competition)]
+    .some(x=>String(x||"").toLocaleLowerCase("id-ID").includes(query));
+  }).sort(tf26RegistrationOrder);
   const attended=all.filter(x=>tf26HasStartNumber(x.startNo)).length;
   render(status,[
    node("div",{class:"stat"},[all.length+" peserta"]),
@@ -562,7 +579,7 @@ function drawRegistration(root,asAdmin){
    const item=node("div",{class:"participant participant-card"},[
     node("div",{class:"participant-info"},[
       node("strong",null,[p.fullName]),
-      node("small",null,[p.school+" • "+branches[p.competition]+" • "+p.id])
+      node("small",null,[p.school+" • "+branches[p.competition]+" • "+tf26DisplayCompetitionCode(p.competition)])
     ]),
     node("div",{class:"num start-number"},[n])
    ]);
