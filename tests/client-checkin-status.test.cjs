@@ -20,7 +20,7 @@ test("only positive integer start numbers count as checked-in",()=>{
  for(const value of [1.5,Infinity,{}])assert.equal(valid(value),false);
 });
 test("all four render decisions use the same guard",()=>{
- assert.match(html,/all\.filter\(x=>tf26HasStartNumber\(x\.startNo\)\)/);
+ assert.match(html,/scoped\.filter\(p=>tf26HasStartNumber\(p\.startNo\)\)/);
  assert.match(html,/const checkedIn=tf26HasStartNumber\(p\.startNo\)/);
  assert.match(html,/const n=checkedIn\?/);
  assert.match(html,/button\.disabled=checkedIn\|\|!p\.verified/);

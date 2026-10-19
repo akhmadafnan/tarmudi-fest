@@ -20,7 +20,7 @@ test("mobile touch targets and no iOS input zoom",()=>{
 });
 test("registration status still driven by positive start number only",()=>{
  assert.match(registration,/tf26HasStartNumber\(p\.startNo\)/);
- assert.match(registration,/all\.filter\(x=>tf26HasStartNumber\(x\.startNo\)\)/);
+ assert.match(html,/scoped\.filter\(p=>tf26HasStartNumber\(p\.startNo\)\)/);
  assert.doesNotMatch(registration,/startNo\s*!==\s*null|startNo\s*===\s*null/);
 });
 test("Admin branch filters use accessible state and preserve text-only rendering",()=>{
