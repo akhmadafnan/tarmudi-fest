@@ -425,6 +425,9 @@ function drawAdminStandings(){
  }
  return section;
 }
+function tf26HasStartNumber(value){
+ return Number.isInteger(value)&&value>0;
+}
 function drawRegistration(root,asAdmin){
  const wrap=node("section",{class:"panel"},[]);
  wrap.append(node("h2",null,["Registrasi ulang peserta"]));
@@ -437,15 +440,16 @@ function drawRegistration(root,asAdmin){
  function displayRows(){
   const all=DATA.participants||[];
   const filtered=all.filter(p=>[p.fullName,p.school,p.id].some(x=>x.toLowerCase().includes(FILTER.trim().toLowerCase())));
-  render(status,[node("div",{class:"stat"},[all.length+" peserta"]),node("div",{class:"stat"},[all.filter(x=>x.startNo!==null).length+" sudah check-in"])]);
+  render(status,[node("div",{class:"stat"},[all.length+" peserta"]),node("div",{class:"stat"},[all.filter(x=>tf26HasStartNumber(x.startNo)).length+" sudah check-in"])]);
   render(list,filtered.map(p=>{
-   const n=p.startNo===null?"—":String(p.startNo).padStart(3,"0");
+   const checkedIn=tf26HasStartNumber(p.startNo);
+   const n=checkedIn?String(p.startNo).padStart(3,"0"):"—";
    const item=node("div",{class:"participant"},[
     node("div",null,[node("strong",null,[p.fullName]),node("small",null,[p.school+" • "+branches[p.competition]+" • "+p.id])]),
     node("div",{class:"num"},[n])
    ]);
-   const button=node("button",{class:"small-btn "+(p.startNo!==null?"green":"")},[p.startNo===null?"Check-in & nomor":"Sudah hadir"]);
-   button.disabled=p.startNo!==null||!p.verified;
+   const button=node("button",{class:"small-btn "+(checkedIn?"green":"")},[checkedIn?"Sudah hadir":"Check-in & nomor"]);
+   button.disabled=checkedIn||!p.verified;
    button.onclick=()=>{if(confirm("Konfirmasi kehadiran "+p.fullName+"?"))submitAction("CHECK_IN",{id:p.id},"Nomor start berhasil ditetapkan.");};
    item.append(button);return item;
   }));
