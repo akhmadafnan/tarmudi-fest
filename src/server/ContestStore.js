@@ -83,7 +83,7 @@ class TF26SheetStore {
   appendTieDecision(payload){
     this.sheet_("TIE_RESOLUTIONS").appendRow([
       payload.competition,payload.orderedStartNumbers.join(","),payload.scoreKey,
-      JSON.stringify(payload.orderedStartNumbers),payload.reason,payload.actorUid,payload.at
+      JSON.stringify(payload.orderedStartNumbers),this.safeText_(payload.reason),payload.actorUid,payload.at
     ]);
   }
   markOfficial(conf,actorUid,now){
@@ -112,7 +112,7 @@ class TF26SheetStore {
     const sheet=this.sheet_("SCORE_REVISIONS");
     sheet.appendRow([value.at,value.competition,value.startNo,value.judgeUid,
       value.schemeVersion,JSON.stringify(value.oldPoints),value.oldTotal,
-      JSON.stringify(value.newPoints),value.newTotal,value.reason,"PENDING"]);
+      JSON.stringify(value.newPoints),value.newTotal,this.safeText_(value.reason),"PENDING"]);
     return sheet.getLastRow();
   }
   markScoreRevisionApplied(row){
@@ -124,6 +124,6 @@ class TF26SheetStore {
   }
   appendAudit(actorUid,action,entity,detail,now){
     // Do not record bearer tokens, full participant names, school or raw score payload.
-    this.sheet_("AUDIT").appendRow([now,actorUid,action,entity,detail]);
+    this.sheet_("AUDIT").appendRow([now,actorUid,action,this.safeText_(entity),this.safeText_(detail)]);
   }
 }
