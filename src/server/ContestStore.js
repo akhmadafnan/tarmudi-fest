@@ -45,6 +45,27 @@ class TF26SheetStore {
         approvedBy:String(row[8]),approvedAt:String(row[9]),rowNumber};
     });
   }
+  safeText_(input){
+    const val=String(input===null||input===undefined?"":input);
+    return /^[=+@-]/.test(val)?"'"+val:val;
+  }
+  replaceParticipants(rows){
+    const sh=this.sheet_("PESERTA_IMPORT");
+    // A backup tab is created BEFORE source overwrite, to recover from
+    // partial failures on Google Sheets (not a transactional database).
+    const stamp=Utilities.formatDate(new Date(),"Asia/Jakarta","yyyyMMdd_HHmmss");
+    let name="BACKUP_"+stamp;
+    if(this.book_.getSheetByName(name))name=name+"_"+Math.floor(Math.random()*100);
+    const backup=sh.copyTo(this.book_).setName(name);
+    backup.hideSheet();
+    const previous=Math.max(0,sh.getLastRow()-1);
+    if(previous>0)sh.getRange(2,1,previous,5).clearContent();
+    const records=rows.map(p=>[this.safeText_(p.id),this.safeText_(p.fullName),this.safeText_(p.school),
+      {MDG:"Mendongeng",THF:"Tahfidz",MWN:"Mewarnai"}[p.competition],p.status]);
+    if(records.length)sh.getRange(2,1,records.length,5).setValues(records);
+    SpreadsheetApp.flush();
+    return name;
+  }
   appendCheckin(value){
     this.sheet_("CHECKINS").appendRow([value.participantId,value.competition,
       value.startNo,value.at,value.actorUid]);

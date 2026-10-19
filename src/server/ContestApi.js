@@ -29,7 +29,7 @@ function tf26Error_(error){
   // A bounded set of user-actionable errors; never reveal internal system
   // exception details, raw token, Firebase config, participant identity.
   const allowed=[
-    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","NOT_VERIFIED",
+    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","INVALID_IMPORT","IMPORT_LOCKED","NOT_VERIFIED",
     "INVALID_POINTS","NOT_CHECKED_IN","SCORE_LOCKED","JUDGING_NOT_OPEN",
     "JUDGES_INCOMPLETE","WRONG_PHASE","BUSY_RETRY","DATABASE_NOT_READY"
   ];
@@ -49,7 +49,9 @@ function apiCommand(idToken,operation,payload){
       throw Error("INVALID_REQUEST");
     const app=tf26Service_();
     let result;
-    if(operation==="CHECK_IN")result=app.checkIn(actor,payload.id);
+    if(operation==="PREVIEW_IMPORT")result=app.previewImport(actor,payload.rows);
+    else if(operation==="COMMIT_IMPORT")result=app.commitImport(actor,payload.rows);
+    else if(operation==="CHECK_IN")result=app.checkIn(actor,payload.id);
     else if(operation==="OPEN_JUDGING")result=app.setJudgingOpen(actor,payload.competition);
     else if(operation==="SAVE_SCORE")result=app.score(actor,{
       startNo:payload.startNo,points:payload.points,final:payload.final
