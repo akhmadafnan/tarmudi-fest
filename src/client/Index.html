@@ -98,6 +98,8 @@ function describe(code){
   INVALID_REQUEST:"Data masukan tidak sesuai format.",
   NOT_VERIFIED:"Peserta belum terverifikasi.",
   INVALID_POINTS:"Ada nilai di luar batas kriteria atau belum lengkap.",
+  INVALID_IMPORT:"Data CSV tidak valid. Periksa format dan batas peserta per sekolah.",
+  IMPORT_LOCKED:"Impor penggantian ditolak: check-in atau penjurian sudah dimulai. Data lama tidak dihapus.",
   NOT_CHECKED_IN:"Nomor tersebut belum check-in.",
   SCORE_LOCKED:"Nilai sudah FINAL dan terkunci.",
   JUDGING_NOT_OPEN:"Penjurian cabang ini belum dibuka Admin.",
@@ -157,8 +159,71 @@ function drawAdmin(root){
   btn.onclick=()=>{if(confirm("Buka penjurian "+c.label+"? Kriteria akan dikunci."))submitAction("OPEN_JUDGING",{competition:c.competition},"Penjurian dibuka.");};
   content.append(btn);return content;
  }));
+ const importer=drawImporter();
  const entries=drawRegistration(null,true);
- render(root,[head,stats,entries]);
+ render(root,[head,stats,importer,entries]);
+}
+function parseCsvStrict(raw){
+ const s=String(raw||"").replace(/^\uFEFF/,"");
+ const rows=[];let field="",current=[],quoted=false;
+ function put(){current.push(field);field="";}
+ function end(){put();if(current.some(x=>x.trim()!==""))rows.push(current);current=[];}
+ for(let i=0;i<s.length;i++){
+  const c=s[i];
+  if(c==='"'){
+   if(quoted&&s[i+1]==='"'){field+='"';i++;}
+   else quoted=!quoted;
+  }else if(c===","&&!quoted){put();}
+  else if((c==="\n"||c==="\r")&&!quoted){
+   if(c==="\r"&&s[i+1]==="\n")i++;
+   end();
+  }else field+=c;
+ }
+ if(quoted)throw Error("Tanda kutip CSV tidak berpasangan.");
+ if(field!==""||current.length)end();
+ const expected=["ID_PENDAFTARAN","NAMA_PESERTA","ASAL_SEKOLAH","CABANG_LOMBA","STATUS_VERIFIKASI"];
+ if(!rows.length||rows[0].length!==5||expected.some((h,i)=>rows[0][i].trim()!==h))
+  throw Error("Header CSV harus sama persis dengan template lima kolom.");
+ const source=rows.slice(1);
+ if(source.some(r=>r.length!==5)||source.length<1||source.length>500)
+  throw Error("CSV harus berisi 1–500 baris, masing-masing lima kolom.");
+ return source.map(r=>({id:r[0].trim(),fullName:r[1].trim(),school:r[2].trim(),
+  branch:r[3].trim(),status:r[4].trim()}));
+}
+function drawImporter(){
+ const card=node("section",{class:"panel"},[
+  node("h2",null,["Impor peserta (CSV)"]),
+  node("p",{class:"small"},["Gunakan format contoh lima kolom. Data diperiksa sebelum disimpan. Mengganti seluruh data hanya diperbolehkan sebelum check-in atau penilaian dimulai; sistem membuat backup otomatis."])
+ ]);
+ const file=node("input");file.type="file";file.accept=".csv,text/csv";file.setAttribute("aria-label","Unggah data peserta CSV");
+ const preview=node("button",{class:"secondary"},["Pratinjau & validasi"]);
+ const commit=node("button",{class:"green"},["Konfirmasi ganti data"]);
+ commit.disabled=true;
+ const result=node("div",{class:"small"},["Belum ada berkas dipilih."]);
+ let rows=[];
+ preview.onclick=async()=>{
+  commit.disabled=true;
+  if(!file.files||file.files.length!==1){result.textContent="Pilih satu berkas CSV terlebih dahulu.";return;}
+  if(file.files[0].size>1024*1024){result.textContent="Berkas terlalu besar (maks. 1 MB).";return;}
+  busy(true);
+  try{
+   rows=parseCsvStrict(await file.files[0].text());
+   const out=await call("apiCommand",[TOKEN,"PREVIEW_IMPORT",{rows}]);
+   if(!out||!out.ok)throw Error(out&&out.error||"REQUEST_FAILED");
+   result.textContent="Total: "+out.data.total+" • Valid: "+out.data.accepted+" • Ditolak: "+out.data.rejected+
+    (out.data.issues.length?" • Masalah: "+out.data.issues.join(" | "):"");
+   commit.disabled=!out.data.canCommit;
+  }catch(e){rows=[];result.textContent=e.message.startsWith("INVALID")?describe(e.message):e.message;}
+  finally{busy(false)}
+ };
+ commit.onclick=async()=>{
+  if(!rows.length)return;
+  if(!confirm("Data lama akan diganti dengan "+rows.length+" peserta. Sistem akan membuat backup. Tindakan ini ditolak otomatis jika check-in atau nilai sudah ada. Lanjut?"))return;
+  const saved=await submitAction("COMMIT_IMPORT",{rows},"Impor peserta berhasil; backup otomatis sudah dibuat.");
+  if(saved)rows=[];
+ };
+ card.append(file,node("div",{class:"controls"},[preview,commit]),result);
+ return card;
 }
 function drawRegistration(root,asAdmin){
  const wrap=node("section",{class:"panel"},[]);
