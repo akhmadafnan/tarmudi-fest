@@ -37,6 +37,85 @@ input:focus,button:focus-visible{outline:3px solid #2b8f70;outline-offset:2px}
 footer{margin-top:45px;font-size:12px;color:#666}
 @media(min-width:800px){.hero{padding:30px;grid-template-columns:1fr auto;align-items:center}.shell{padding:23px 30px}.panel{padding:21px}}
 @media(prefers-reduced-motion:reduce){button{transition:none}*{scroll-behavior:auto!important}}
+/* TF26 MOBILE-FIRST UAT: presentation only; zero changes to auth or data flow. */
+html{min-width:320px;-webkit-text-size-adjust:100%}
+body{overflow-x:hidden}
+.shell,.panel,#workspace-body{min-width:0}
+.panel{overflow-wrap:break-word}
+.hero .controls{align-self:start}
+.registration-panel{scroll-margin-top:12px}
+.registration-search{display:block;margin-bottom:10px}
+.search-label{font-size:13px;font-weight:850;margin:0 0 6px}
+.registration-search input{width:100%;min-width:0}
+.registration-filters{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 10px}
+.registration-filters .chip{min-height:44px}
+.registration-counts{margin-bottom:12px}
+.registration-counts .stat{min-width:0}
+.participant-card{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px 16px;align-items:center}
+.participant-info{min-width:0}
+.participant-info strong{font-weight:850;overflow-wrap:anywhere;line-height:1.35}
+.participant-info small{display:block;overflow-wrap:anywhere;line-height:1.45;margin-top:3px}
+.start-number{min-width:3ch;text-align:center;line-height:1.1}
+.checkin-button{min-height:44px;white-space:nowrap}
+.rank-row>div:first-child{min-width:0;overflow-wrap:anywhere}
+#workspace>.controls{min-width:0}
+.score-row label{min-width:0;overflow-wrap:anywhere}
+.score-row input{text-align:center;font-variant-numeric:tabular-nums}
+@media(max-width:700px){
+ .shell{padding:12px 12px 56px}
+ .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+ .brand{font-size:14px}
+ .topbar .tag{font-size:11px;max-width:100%;padding:5px 9px;line-height:1.3}
+ .hero{padding:16px;margin:15px 0 18px;box-shadow:4px 4px 0 #202020;border-width:2px;gap:12px}
+ .hero h1{font-size:clamp(27px,7.8vw,36px)}
+ .hero .eyebrow{font-size:10px;letter-spacing:.1em}
+ .hero p{font-size:13px;margin-bottom:2px}
+ .hero .controls{margin:4px 0 0;width:100%;display:grid;grid-template-columns:1fr}
+ .hero .controls button{width:100%;min-height:46px}
+ .panel{padding:14px;border-width:2px;margin-top:14px;box-shadow:3px 3px 0 #202020}
+ .panel h2{font-size:21px;line-height:1.2}
+ .grid{grid-template-columns:minmax(0,1fr);gap:11px}
+ #workspace>.controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+ #workspace>.controls .tag{grid-column:1/-1;justify-content:center}
+ #workspace>.controls button{width:100%;margin:0}
+ .registration-search input{min-height:48px;font-size:16px}
+ .registration-filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;scroll-snap-type:x proximity;padding:3px 1px 10px}
+ .registration-filters .chip{flex:0 0 auto;white-space:nowrap;scroll-snap-align:start}
+ .registration-counts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .registration-counts .stat{font-size:12px;min-height:45px;padding:11px 8px;text-align:center}
+ .results{gap:10px}
+ .participant-card{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"info number" "action action";gap:8px 12px;padding:13px 12px;align-items:start}
+ .participant-card .participant-info{grid-area:info}
+ .participant-card .start-number{grid-area:number;text-align:right;min-width:3ch;font-size:26px;padding-top:1px}
+ .participant-card .checkin-button{grid-area:action;width:100%;margin-top:3px;min-height:46px;font-size:14px;box-shadow:2px 2px 0 #202020}
+ .participant-info strong{font-size:14px}
+ .participant-info small{font-size:12px}
+ .rank-row{gap:10px;padding:12px}
+ .rank-row .num{font-size:22px;flex:0 0 auto}
+ .score-row{grid-template-columns:minmax(0,1fr) 88px;gap:8px}
+ .score-row input{font-size:16px;padding:8px;min-height:48px}
+ .chips:not(.registration-filters){flex-wrap:nowrap;overflow-x:auto;padding:4px 1px 9px}
+ .chip{min-height:44px;white-space:nowrap}
+ .login{max-width:100%}
+ #loading{left:12px;right:12px;bottom:12px;text-align:center;z-index:20}
+ .panel input[type=file]{max-width:100%;font-size:13px}
+ .panel .controls button{flex:1 1 145px;min-width:0}
+ footer{padding:0 4px;font-size:11px}
+}
+@media(max-width:370px){
+ .shell{padding:9px 9px 48px}
+ .hero{padding:13px}
+ .hero h1{font-size:27px}
+ .participant-card{padding:11px 9px;gap:8px}
+ .participant-card .start-number{font-size:24px}
+ .panel{padding:12px}
+ .brand{font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){
+ .registration-filters{scroll-behavior:auto}
+ button:hover:not(:disabled){transform:none}
+}
+
 </style></head>
 <body><div class="shell">
 <header class="topbar"><div class="brand">TARMUDI <span>FEST</span> <strong>2026</strong></div><span class="tag">Kampus 2 • MIS Tarbiyatul Mubtadiin</span></header>
@@ -429,34 +508,83 @@ function tf26HasStartNumber(value){
  return Number.isInteger(value)&&value>0;
 }
 function drawRegistration(root,asAdmin){
- const wrap=node("section",{class:"panel"},[]);
+ const wrap=node("section",{class:"panel registration-panel"},[]);
  wrap.append(node("h2",null,["Registrasi ulang peserta"]));
- const input=node("input",{placeholder:"Cari nama, sekolah, atau ID peserta"});
- input.value=FILTER; input.oninput=()=>{FILTER=input.value;displayRows();};
- wrap.append(input);
- const status=node("div",{class:"statline"});
+ const search=node("div",{class:"registration-search"},[]);
+ const label=node("label",{class:"search-label"},["Cari peserta"]);
+ label.htmlFor="registration-search-input";
+ const input=node("input",{placeholder:"Ketik nama, sekolah, atau ID peserta"});
+ input.id="registration-search-input";input.type="search";
+ input.setAttribute("autocomplete","off");input.setAttribute("aria-label","Cari peserta berdasarkan nama, sekolah, atau ID");
+ input.value=FILTER;
+ search.append(label,input);wrap.append(search);
+ let currentBranch="ALL";
+ const filters=node("div",{class:"chips registration-filters"},[]);
+ filters.setAttribute("role","group");filters.setAttribute("aria-label","Filter cabang lomba");
+ function refreshFilters(){
+  for(const btn of filters.children){
+   const isActive=btn.dataset.branch===currentBranch;
+   btn.classList.toggle("selected",isActive);
+   btn.setAttribute("aria-pressed",String(isActive));
+  }
+ }
+ if(asAdmin){
+  const options=[["ALL","Semua"],["MDG","Mendongeng"],["THF","Tahfidz"],["MWN","Mewarnai"]];
+  for(const [code,name] of options){
+   const btn=node("button",{class:"chip"},[name]);
+   btn.type="button";btn.dataset.branch=code;
+   btn.onclick=()=>{currentBranch=code;refreshFilters();displayRows();};
+   filters.append(btn);
+  }
+  wrap.append(filters);refreshFilters();
+ }
+ const status=node("div",{class:"statline registration-counts"},[]);
+ status.setAttribute("aria-live","polite");
  wrap.append(status);
- const list=node("div",{class:"results"});wrap.append(list);
+ const list=node("div",{class:"results"},[]);wrap.append(list);
+ input.oninput=()=>{FILTER=input.value;displayRows();};
  function displayRows(){
   const all=DATA.participants||[];
-  const filtered=all.filter(p=>[p.fullName,p.school,p.id].some(x=>x.toLowerCase().includes(FILTER.trim().toLowerCase())));
-  render(status,[node("div",{class:"stat"},[all.length+" peserta"]),node("div",{class:"stat"},[all.filter(x=>tf26HasStartNumber(x.startNo)).length+" sudah check-in"])]);
+  const query=FILTER.trim().toLocaleLowerCase("id-ID");
+  const filtered=all.filter(p=>{
+   if(asAdmin&&currentBranch!=="ALL"&&p.competition!==currentBranch)return false;
+   return [p.fullName,p.school,p.id].some(x=>String(x||"").toLocaleLowerCase("id-ID").includes(query));
+  });
+  const attended=all.filter(x=>tf26HasStartNumber(x.startNo)).length;
+  render(status,[
+   node("div",{class:"stat"},[all.length+" peserta"]),
+   node("div",{class:"stat"},[attended+" sudah check-in"]),
+   node("div",{class:"stat"},[filtered.length+" ditampilkan"])
+  ]);
   render(list,filtered.map(p=>{
    const checkedIn=tf26HasStartNumber(p.startNo);
    const n=checkedIn?String(p.startNo).padStart(3,"0"):"—";
-   const item=node("div",{class:"participant"},[
-    node("div",null,[node("strong",null,[p.fullName]),node("small",null,[p.school+" • "+branches[p.competition]+" • "+p.id])]),
-    node("div",{class:"num"},[n])
+   const item=node("div",{class:"participant participant-card"},[
+    node("div",{class:"participant-info"},[
+      node("strong",null,[p.fullName]),
+      node("small",null,[p.school+" • "+branches[p.competition]+" • "+p.id])
+    ]),
+    node("div",{class:"num start-number"},[n])
    ]);
-   const button=node("button",{class:"small-btn "+(checkedIn?"green":"")},[checkedIn?"Sudah hadir":"Check-in & nomor"]);
-   button.disabled=checkedIn||!p.verified;
-   button.onclick=()=>{if(confirm("Konfirmasi kehadiran "+p.fullName+"?"))submitAction("CHECK_IN",{id:p.id},"Nomor start berhasil ditetapkan.");};
+   const button=node("button",{class:"small-btn checkin-button "+(checkedIn?"green":"")},[
+    checkedIn?"Sudah hadir":"Check-in & nomor"
+   ]);
+   button.type="button";button.disabled=checkedIn||!p.verified;
+   button.setAttribute("aria-label",checkedIn?
+    "Peserta "+p.fullName+" sudah hadir, nomor "+n:
+    "Check-in peserta "+p.fullName);
+   button.onclick=()=>{
+    if(confirm("Konfirmasi kehadiran "+p.fullName+"?"))
+      submitAction("CHECK_IN",{id:p.id},"Nomor start berhasil ditetapkan.");
+   };
    item.append(button);return item;
   }));
-  if(!filtered.length)list.append(node("div",{class:"noresults"},["Peserta tidak ditemukan."]));
+  if(!filtered.length)list.append(node("div",{class:"noresults"},[
+   "Tidak ada peserta yang cocok. Ubah kata pencarian atau filter cabang."
+  ]));
  }
  displayRows();
- if(root){render(root,[wrap]);}
+ if(root)render(root,[wrap]);
  return wrap;
 }
 function drawJudge(root){
