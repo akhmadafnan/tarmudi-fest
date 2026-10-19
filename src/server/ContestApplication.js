@@ -53,7 +53,7 @@ class TF26Application {
     }
     const confs=this.store_.settings().map(s=>({
       competition:s.competition,label:s.label,phase:s.state,requiredJudges:s.requiredJudges,
-      assignedJudgeCount:this.assignedJudges_(s.competition).length,version:s.version,
+      assignedJudgeCount:this.assignedJudges_(s.competition).length,version:s.version,criteria:s.criteria,
       publication:s.publication,privacyApproved:s.privacyApproved
     }));
     return {role:"admin",competition:"ALL",config:confs,participants:this.participantsAndAttendance_(null)};

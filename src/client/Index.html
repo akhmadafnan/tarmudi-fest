@@ -239,16 +239,32 @@ function drawImporter(){
 }
 function drawSchemeEditor(root,conf){
  const card=node("div",{class:"panel"},[]);
- card.append(node("h3",null,["Skema "+conf.label]));
- card.append(node("p",{class:"small"},["Jumlah poin maksimum wajib tepat 100. Perubahan hanya boleh sebelum penjurian dibuka."]));
- const source=(DATA.config||[]).find(c=>c.competition===conf.competition);
- // Criteria are read from admin-specific request rather than from a judge account.
- // Until scheme editing is enabled in the private admin response, show only judge count.
+ card.append(node("h3",null,["Atur skema "+conf.label]));
+ card.append(node("p",{class:"small"},["Perubahan hanya diperbolehkan sebelum penjurian dibuka. Jumlah maksimum poin seluruh kriteria harus 100. Setiap perubahan menjadi versi baru dan diaudit."]));
+ const rows=[];
+ for(const item of (conf.criteria||[])){
+  const label=node("input");label.value=item[0];label.maxLength=80;
+  const number=node("input",{type:"number",min:"1",max:"100",step:"1"});
+  number.value=String(item[1]);
+  rows.push({label,number});
+  const line=node("div",{class:"score-row"},[label,number]);
+  card.append(line);
+ }
  const count=node("input",{type:"number",min:"2",max:"3",step:"1"});
- count.value=String(source.requiredJudges);
- const label=node("label",null,["Juri wajib (2–3)"]);card.append(label,count);
- const button=node("button",{class:"secondary"},["Simpan jumlah juri"]);
- button.onclick=()=>msg("Perubahan bobot/kriteria disiapkan melalui versi skema baru. Gunakan formulir Admin setelah data lengkap tersedia.",true);
+ count.value=String(conf.requiredJudges);
+ card.append(node("label",null,["Jumlah juri wajib (2–3)"]),count);
+ const button=node("button",{class:"green"},["Simpan versi skema baru"]);
+ button.onclick=()=>{
+  const criteria=rows.map(({label,number})=>[label.value.trim(),Number(number.value)]);
+  const requiredJudges=Number(count.value);
+  if(!Number.isInteger(requiredJudges)||![2,3].includes(requiredJudges)||
+     criteria.some(([label,max])=>label.length<2||!Number.isInteger(max)||max<1||max>100)||
+     criteria.reduce((sum,x)=>sum+x[1],0)!==100){
+     msg("Pastikan kriteria terisi, semua angka bulat positif, jumlah maksimum tepat 100, dan juri wajib 2 atau 3.",true);return;
+  }
+  if(!confirm("Simpan skema baru "+conf.label+"? Versi aktif akan meningkat. Pastikan keputusan panitia telah disetujui."))return;
+  submitAction("UPDATE_SCHEME",{competition:conf.competition,requiredJudges,criteria},"Versi skema baru tersimpan di server.");
+ };
  card.append(button);
  render(root,[card]);
 }
