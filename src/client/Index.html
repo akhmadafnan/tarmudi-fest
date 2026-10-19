@@ -643,6 +643,16 @@ function drawSchemeEditor(root,conf){
  card.append(button);
  render(root,[card]);
 }
+/**
+ * Apps Script browser RPC can omit a null rank for an unresolved tie.
+ * The explicit pendingDeliberation flag is authoritative; never render
+ * '#undefined' or manufacture a rank before a jury resolution.
+ */
+function tf26RankLabel(entry,admin){
+ if(entry&&entry.pendingDeliberation===true)return admin?"Perlu musyawarah":"Seri";
+ if(entry&&Number.isInteger(entry.rank)&&entry.rank>0)return "#"+entry.rank;
+ return "Peringkat belum tersedia";
+}
 function drawAdminStandings(){
  const section=node("section",{class:"panel"},[
   node("h2",null,["Rekap hasil internal Admin"]),
@@ -651,7 +661,7 @@ function drawAdminStandings(){
  for(const group of (DATA.privateStandings||[])){
   section.append(node("h3",null,[branches[group.competition]]));
   const list=node("div",{class:"results"},group.items.map(r=>{
-   const label=r.rank===null?"Perlu musyawarah":"#"+r.rank;
+   const label=tf26RankLabel(r,true);
    return node("div",{class:"rank-row"},[
     node("div",null,[node("strong",null,[label+" • Nomor "+String(r.startNo).padStart(3,"0")]),
       node("div",{class:"small"},[r.fullName+" — "+r.school])]),
@@ -673,7 +683,8 @@ function drawAdminStandings(){
     node("p",{class:"small"},["Nomor seri: "+numbers.map(n=>String(n).padStart(3,"0")).join(", ")+". Masukkan urutan pemenang hasil musyawarah juri."])
    ]);
    const ordered=node("input",{placeholder:"Contoh: 2,1"});
-   ordered.value=numbers.join(",");
+   ordered.value="";
+   ordered.placeholder="Masukkan urutan semua nomor setelah musyawarah, contoh: 2,4";
    const reason=node("input",{placeholder:"Alasan keputusan dan berita acara dewan juri"});
    reason.maxLength=500;
    box.append(node("label",null,["Urutan nomor start setelah musyawarah"]),ordered,
@@ -1092,7 +1103,7 @@ async function loadPublic(){
   const rows=(data.results||[]).map(p=>{
    const name=p.fullName?" — "+p.fullName+" ("+p.school+")":"";
    return node("div",{class:"rank-row"},[
-    node("div",null,[node("strong",null,[(p.rank===null?"Seri":"#"+p.rank)+" • Nomor "+String(p.startNo).padStart(3,"0")]),node("div",{class:"small"},[p.pendingDeliberation?"Menunggu musyawarah juri":"Nilai lengkap"+name])]),
+    node("div",null,[node("strong",null,[tf26RankLabel(p,false)+" • Nomor "+String(p.startNo).padStart(3,"0")]),node("div",{class:"small"},[p.pendingDeliberation?"Menunggu musyawarah juri":"Nilai lengkap"+name])]),
     node("div",{class:"num"},[p.meanScore.toFixed(2)])
    ]);
   });
