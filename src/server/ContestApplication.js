@@ -65,7 +65,10 @@ class TF26Application {
         return {...r,fullName:p?p.fullName:"",school:p?p.school:""};
       })};
     });
-    return {role:"admin",competition:"ALL",config:confs,
+    const provisionedAccounts=Object.values(this.assignments_)
+      .filter(u=>u&&u.active===true&&typeof u.username==="string")
+      .map(u=>u.username);
+    return {role:"admin",competition:"ALL",provisionedAccounts,config:confs,
       participants:this.participantsAndAttendance_(null),privateStandings};
   }
   locked_(handler){

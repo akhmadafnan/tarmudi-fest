@@ -33,12 +33,61 @@ function tf26Error_(error){
   // A bounded set of user-actionable errors; never reveal internal system
   // exception details, raw token, Firebase config, participant identity.
   const allowed=[
-    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
+    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","ACCOUNT_EXISTS","ACCOUNT_LIMIT","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
     "INVALID_POINTS","NOT_CHECKED_IN","SCORE_LOCKED","JUDGING_NOT_OPEN",
     "JUDGES_INCOMPLETE","WRONG_PHASE","BUSY_RETRY","DATABASE_NOT_READY"
   ];
   const code=error&&error.message;
   return {ok:false,error:allowed.includes(code)?code:"REQUEST_FAILED"};
+}
+function tf26SeedSpec_(username){
+  // All business roles are an explicit server-side allowlist, not chosen by browser.
+  const seeds={
+    "reg-mdg":["registrasi","MDG"],"reg-thf":["registrasi","THF"],"reg-mwn":["registrasi","MWN"]
+  };
+  for(const [prefix,branch] of [["mdg","MDG"],["thf","THF"],["mwn","MWN"]]){
+    for(let i=1;i<=3;i++){
+      const id="juri-"+prefix+"-"+String(i).padStart(2,"0");
+      seeds[id]=["juri",branch];
+    }
+  }
+  const result=Object.prototype.hasOwnProperty.call(seeds,username)?seeds[username]:null;
+  return result?{role:result[0],competition:result[1]}:null;
+}
+function apiProvisionAccount(adminToken,username,newUserIdToken){
+  try{
+    const admin=tf26Actor_(adminToken);
+    if(admin.role!=="admin")throw Error("NOT_ALLOWED");
+    if(typeof username!=="string"||!/^((reg-(mdg|thf|mwn))|(juri-(mdg|thf|mwn)-0[1-3]))$/.test(username))
+      throw Error("INVALID_REQUEST");
+    const spec=tf26SeedSpec_(username);
+    if(!spec)throw Error("INVALID_REQUEST");
+    const props=tf26Properties_();
+    const newIdentity=new FirebaseIdentityVerifier(
+      props,UrlFetchApp,Utilities,()=>Math.floor(Date.now()/1000)
+    ).verify(newUserIdToken);
+    const lock=LockService.getScriptLock();
+    if(!lock.tryLock(25000))throw Error("BUSY_RETRY");
+    try{
+      const map=JSON.parse(props.getProperty("TF26_AUTH_ALLOWLIST_JSON")||"{}");
+      if(!map||typeof map!=="object"||Array.isArray(map))throw Error("INVALID_CONFIGURATION");
+      if(Object.values(map).some(x=>x&&x.active===true&&x.username===username))throw Error("ACCOUNT_EXISTS");
+      if(Object.prototype.hasOwnProperty.call(map,newIdentity.uid))throw Error("ACCOUNT_EXISTS");
+      // Replace initial synthetic Tahfidz judge pilot with the real alias account.
+      if(username==="juri-thf-01"){
+        for(const uid of Object.keys(map)){
+          const old=map[uid];
+          if(old&&old.role==="juri"&&old.competition==="THF"&&!old.username&&old.active===true)
+            old.active=false;
+        }
+      }
+      const active=Object.values(map).filter(x=>x&&x.active===true);
+      if(active.length>=13)throw Error("ACCOUNT_LIMIT");
+      map[newIdentity.uid]={role:spec.role,competition:spec.competition,username,active:true};
+      props.setProperty("TF26_AUTH_ALLOWLIST_JSON",JSON.stringify(map));
+      return {ok:true,data:{username,role:spec.role,competition:spec.competition}};
+    }finally{lock.releaseLock();}
+  }catch(err){return tf26Error_(err);}
 }
 function apiApp(idToken){
   try{
