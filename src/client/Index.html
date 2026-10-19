@@ -68,6 +68,7 @@ footer{margin-top:45px;font-size:12px;color:#666}
 "use strict";
 const CFG=<?!= publicConfig ?>;
 let TOKEN=null,IDENTITY=null,DATA=null,PUBLIC=false,BRANCH="THF",FILTER="";
+let NEW_CREDENTIALS=[];
 const $=id=>document.getElementById(id);
 function text(value){return document.createTextNode(String(value===null||value===undefined?"":value));}
 function node(tag,props,children){
@@ -114,6 +115,8 @@ function describe(code){
   WRONG_PHASE:"Status cabang tidak memperbolehkan operasi ini.",
   DATABASE_NOT_READY:"Database belum dihubungkan. Hubungi pengelola sistem.",
   BUSY_RETRY:"Server sibuk. Silakan coba lagi.",
+  ACCOUNT_EXISTS:"Akun tersebut sudah terdaftar. Jangan membuat salinan baru.",
+  ACCOUNT_LIMIT:"Batas 13 akun aktif sudah tercapai.",
   REQUEST_FAILED:"Permintaan gagal di server; jangan anggap data tersimpan."
  }[code]||"Terjadi kendala. Silakan coba lagi.";
 }
@@ -186,8 +189,95 @@ function drawAdmin(root){
  }));
  const importer=drawImporter();
  const standings=drawAdminStandings();
+ const accounts=drawAccountProvisioner();
  const entries=drawRegistration(null,true);
- render(root,[head,stats,standings,importer,entries]);
+ render(root,[head,stats,accounts,standings,importer,entries]);
+}
+const TF26_PLANNED_USERS=[
+ {username:"reg-mdg",role:"registrasi",competition:"MDG"},
+ {username:"reg-thf",role:"registrasi",competition:"THF"},
+ {username:"reg-mwn",role:"registrasi",competition:"MWN"},
+ ...["MDG","THF","MWN"].flatMap(code=>[1,2,3].map(n=>({
+  username:"juri-"+code.toLowerCase()+"-0"+n,role:"juri",competition:code
+ })))
+];
+function tf26RandomPassword(){
+ if(!window.crypto||typeof window.crypto.getRandomValues!=="function")throw Error("Secure random tidak tersedia di browser ini.");
+ const bytes=new Uint8Array(24);
+ window.crypto.getRandomValues(bytes);
+ return btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=/g,"");
+}
+function drawAccountProvisioner(){
+ const root=node("section",{class:"panel"},[
+  node("h2",null,["Akun Petugas & Juri"]),
+  node("p",{class:"small"},["Akun juri dan registrasi dapat dibuat dari sini tanpa mengatur satu-satu di Firebase. Setiap akun mendapatkan password acak unik. Password hanya tampil sekali dan harus diberikan secara privat."])
+ ]);
+ const existing=new Set(DATA.provisionedAccounts||[]);
+ const pending=TF26_PLANNED_USERS.filter(x=>!existing.has(x.username));
+ root.append(node("div",{class:"statline"},[node("div",{class:"stat"},[existing.size+" akun telah diprovisikan"]),
+   node("div",{class:"stat"},[pending.length+" akun belum dibuat"])]));
+ const process=node("p",{class:"small"},["Admin uji saat ini tetap digunakan. Jangan memakai akun uji berbasis alamat email yang bukan milik Anda untuk data produksi."]);
+ root.append(process);
+ const generate=node("button",{class:"green"},["Siapkan akun yang belum dibuat"]);
+ generate.disabled=!pending.length||!CFG.apiKey||!CFG.domain;
+ const exportBtn=node("button",{class:"secondary"},["Unduh CSV kredensial satu kali"]);
+ exportBtn.disabled=NEW_CREDENTIALS.length===0;
+ function showCredentials(){
+  let box=root.querySelector(".account-report");
+  if(!box){box=node("div",{class:"account-report panel"},[]);root.append(box);}
+  const records=NEW_CREDENTIALS.map(x=>node("div",{class:"participant"},[
+   node("div",null,[node("strong",null,[x.username]),node("div",{class:"small"},[x.email])]),
+   node("code",null,[x.password])
+  ]));
+  render(box,[node("h3",null,["Kredensial baru — simpan secara privat"]),...records]);
+  exportBtn.disabled=NEW_CREDENTIALS.length===0;
+ }
+ generate.onclick=async()=>{
+  if(!pending.length)return;
+  if(!window.crypto||!window.crypto.getRandomValues){msg("Browser tidak menyediakan generator password aman.",true);return;}
+  if(!confirm("Siapkan "+pending.length+" akun baru dengan password berbeda-beda? Password akan muncul sekali. Simpan dan distribusikan hanya melalui kanal privat."))return;
+  generate.disabled=true;busy(true);
+  let success=0,failed=0;
+  try{
+   for(const spec of pending){
+    process.textContent="Membuat akun "+spec.username+" ("+(success+failed+1)+"/"+pending.length+")...";
+    const email=spec.username+"@"+CFG.domain;
+    const password=tf26RandomPassword();
+    try{
+     const response=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+encodeURIComponent(CFG.apiKey),{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password,returnSecureToken:true})
+     });
+     if(!response.ok)throw Error("FIREBASE_USER_FAILED");
+     const data=await response.json();
+     if(!data.idToken)throw Error("FIREBASE_TOKEN_MISSING");
+     const allowed=await call("apiProvisionAccount",[TOKEN,spec.username,data.idToken]);
+     if(!allowed||allowed.ok!==true)throw Error(allowed&&allowed.error||"REQUEST_FAILED");
+     NEW_CREDENTIALS.push({username:spec.username,email,password,
+      role:allowed.data.role,competition:allowed.data.competition});
+     success++;showCredentials();
+    }catch(error){failed++;process.textContent="Gagal pada "+spec.username+": "+(error.message||"tidak diketahui")+
+      ". Akun lain dilanjutkan; hubungi pengelola bila perlu.";}
+   }
+   process.textContent="Selesai: "+success+" akun dibuat, "+failed+" gagal. Simpan kredensial privat lalu muat ulang panel untuk melihat penugasan.";
+   if(success)msg(success+" akun baru berhasil diberikan penugasan di server.");
+  }catch(error){msg("Proses akun terhenti: "+(error.message||"kegagalan jaringan"),true);}
+  finally{busy(false);generate.disabled=false;exportBtn.disabled=NEW_CREDENTIALS.length===0;}
+ };
+ exportBtn.onclick=()=>{
+  if(!NEW_CREDENTIALS.length)return;
+  const keys=["username","email","password","role","competition"];
+  const quote=x=>'"'+String(x).replace(/"/g,'""')+'"';
+  const csv=[keys.join(","),...NEW_CREDENTIALS.map(row=>keys.map(k=>quote(row[k])).join(","))].join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const uri=URL.createObjectURL(blob);
+  const link=document.createElement("a");link.href=uri;link.download="tarmudi-fest-kredensial-privat.csv";
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(uri),1500);
+ };
+ root.append(node("div",{class:"controls"},[generate,exportBtn]));
+ if(NEW_CREDENTIALS.length)showCredentials();
+ return root;
 }
 function parseCsvStrict(raw){
  const s=String(raw||"").replace(/^\uFEFF/,"");
