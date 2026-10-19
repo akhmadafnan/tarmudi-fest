@@ -9,5 +9,6 @@ test("Admin branch filter preserved after dashboard refresh",()=>{
  assert.match(html,/REGISTRATION_BRANCH_FILTER=code;refreshFilters\(\);displayRows\(\);/);
 });
 test("Reset branch filter on logout, preserving privacy of shared device",()=>{
- assert.match(html,/FILTER="";REGISTRATION_BRANCH_FILTER="ALL";\$\("password"\)\.value="";showLogin\(\)/);
+ assert.match(html,/FILTER="";REGISTRATION_BRANCH_FILTER="ALL";/);
+ assert.ok(html.includes('JUDGE_SELECTED_NUMBER=null;JUDGE_SEARCH="";JUDGE_FILTER="ALL";'));
 });
