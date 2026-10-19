@@ -25,7 +25,7 @@ function tf26Service_(){
   const allowedReduced=String(props.getProperty("TF26_ALLOW_TWO_JUDGE_BRANCHES")||"")
     .split(",").map(x=>x.trim().toUpperCase()).filter(Boolean);
   return new TF26Application(new TF26SheetStore(book),LockService,
-    ()=>Utilities.formatDate(new Date(),"Asia/Jakarta","yyyy-MM-dd'T'HH:mm:ssXXX"),
+    ()=>Utilities.formatDate(new Date(),"Asia/Jakarta","yyyy-MM-dd'T'HH:mm:ss")+"+07:00",
     roles,allowedReduced,
     String(props.getProperty("TF26_PRIVACY_RELEASE_AUTHORIZED")||"").toUpperCase()==="TRUE");
 }
@@ -33,7 +33,7 @@ function tf26Error_(error){
   // A bounded set of user-actionable errors; never reveal internal system
   // exception details, raw token, Firebase config, participant identity.
   const allowed=[
-    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
+    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
     "INVALID_POINTS","NOT_CHECKED_IN","SCORE_LOCKED","JUDGING_NOT_OPEN",
     "JUDGES_INCOMPLETE","WRONG_PHASE","BUSY_RETRY","DATABASE_NOT_READY"
   ];

@@ -209,6 +209,8 @@ class TF26Application {
         throw Error("INVALID_TIE_DECISION");
       const key=this.tieKey_(req.competition,candidates[0].startNo,conf);
       if(!key)throw Error("INVALID_TIE_DECISION");
+      if(this.store_.tieDecisions().some(d=>d.competition===req.competition&&d.scoreKey===key))
+        throw Error("TIE_ALREADY_DECIDED");
       const payload={competition:req.competition,orderedStartNumbers:req.orderedStartNumbers,
         scoreKey:key,reason:req.reason.trim(),actorUid:actor.uid,at:this.stamp_()};
       this.store_.appendTieDecision(payload);
