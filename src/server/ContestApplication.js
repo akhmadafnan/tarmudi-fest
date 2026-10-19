@@ -210,12 +210,14 @@ class TF26Application {
       // position. Equal *rounded means* alone do not prove a genuine tie,
       // particularly in Tahfidz with criterion-priority ordering.
       const tiedPosition=candidates[0].tieGroupPosition;
-      if(!Number.isInteger(tiedPosition)||tiedPosition>6||
-        candidates.some(x=>x.tieGroupPosition!==tiedPosition)||
-        pending.filter(x=>x.tieGroupPosition===tiedPosition).length!==candidates.length)
+      const exactGroup=pending.filter(x=>x.tieGroupPosition===tiedPosition);
+      const winnerSlots=Math.min(exactGroup.length,7-tiedPosition);
+      if(!Number.isInteger(tiedPosition)||tiedPosition<1||tiedPosition>6||
+        winnerSlots<1||req.orderedStartNumbers.length!==winnerSlots||
+        candidates.some(x=>x.tieGroupPosition!==tiedPosition))
         throw Error("INVALID_TIE_DECISION");
       const key=this.tieKey_(req.competition,candidates[0].startNo,conf);
-      if(!key||candidates.some(x=>this.tieKey_(req.competition,x.startNo,conf)!==key))
+      if(!key||exactGroup.some(x=>this.tieKey_(req.competition,x.startNo,conf)!==key))
         throw Error("INVALID_TIE_DECISION");
       if(this.store_.tieDecisions().some(d=>d.competition===req.competition&&d.scoreKey===key))
         throw Error("TIE_ALREADY_DECIDED");

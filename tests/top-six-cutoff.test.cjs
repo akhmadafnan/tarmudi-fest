@@ -56,10 +56,25 @@ test("200 participants render full ranking but trigger only cutoff deliberation"
 });
 test("separate Tahfidz criterion-priority groups sharing an average never merge",()=>{
  const c1=[38,24,18,10],c2=[37,25,18,10];
- const out=TF26Domain.rank(make([c1,c1,c2,c2,d,e,below]));
+ const out=TF26Domain.rank(make([c1,c1,c2,c2,[36,25,18,10],[35,25,18,10],below]));
  assert.deepEqual(out.filter(x=>x.pendingDeliberation).map(x=>x.tieGroupPosition),[1,1,3,3]);
  assert.equal(out[0].meanScore,out[2].meanScore);
  assert.equal(out[0].meanScore,90);
+});
+test("twenty entrants tied at sixth only need one winner selected for position six",()=>{
+ const data=[top,a,b,c,d];
+ while(data.length<25)data.push(e);
+ const config=make(data);
+ const before=TF26Domain.rank(config);
+ assert.equal(before.filter(x=>x.pendingDeliberation).length,20);
+ const key="285:105:90:60:30";
+ config.tieDecisions=[{competition:"THF",scoreKey:key,orderedStartNumbers:[25]}];
+ const after=TF26Domain.rank(config);
+ assert.equal(after.filter(x=>x.pendingDeliberation).length,0);
+ assert.equal(after[5].startNo,25);
+ assert.equal(after[5].rank,6);
+ assert.ok(after.slice(6).every(x=>x.sharedRank&&x.rank===7));
+ assert.equal(after.length,25);
 });
 test("Mendongeng ties outside sixth use shared rank without a compulsory jury action",()=>{
  const cMDG=[["Ekspresi",25],["Artikulasi",25],["Isi",20],["Kreativitas",15],["Penampilan",15]];

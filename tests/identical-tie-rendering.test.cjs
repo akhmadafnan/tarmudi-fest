@@ -42,7 +42,7 @@ test("unexpected rank payload never displays #undefined or an invented place",()
 test("both Admin and public ranking views use the same defensive rank label",()=>{
  const admin=html.slice(html.indexOf("function drawAdminStandings(){"),html.indexOf("function tf26HasStartNumber("));
  const pub=html.slice(html.indexOf("async function loadPublic(){"),html.indexOf("function publicView(){"));
- assert.match(admin,/const label=tf26RankLabel\(r,true\)/);
+ assert.match(admin,/const label=tf26RankLabel\(item,true\)/);
  assert.match(pub,/tf26RankLabel\(p,false\)/);
  assert.doesNotMatch(admin,/#undefined/);
  assert.doesNotMatch(pub,/#undefined/);
@@ -51,12 +51,12 @@ test("jury deliberation requires deliberate manual ordering rather than a sugges
  const admin=html.slice(html.indexOf("function drawAdminStandings(){"),html.indexOf("function tf26HasStartNumber("));
  assert.match(admin,/ordered\.value="";/);
  assert.doesNotMatch(admin,/ordered\.value=numbers\.join/);
- assert.match(admin,/new Set\(vals\)\.size!==numbers\.length/);
+ assert.match(admin,/new Set\(vals\)\.size!==winnerSlots/);
  assert.match(admin,/reason\.value\.trim\(\)\.length<15/);
  assert.match(admin,/submitAction\("RESOLVE_TIE"/);
 });
 test("domain leaves truly unresolved tied ranking with a null rank and an explicit flag",()=>{
- assert.match(domain,/rank:requiresDeliberation\?null:isSharedRank\?position:position\+i/);
+ assert.match(domain,/rank:requiresDeliberation\?null:isSharedRank\?position\+\(ordered\?winningSlots:0\):position\+i/);
  assert.match(domain,/pendingDeliberation:requiresDeliberation,sharedRank:isSharedRank/);
  assert.match(domain,/const requiresDeliberation=isUnresolved&&position<=6/);
  assert.match(domain,/const isUnresolved=members\.length>1&&!ordered/);

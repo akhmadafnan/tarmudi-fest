@@ -78,30 +78,38 @@ class TF26Domain {
     for(const group of groups){
       const members=group.members.slice();
       let ordered=false;
-      if(members.length>1){
+      // If a group crosses the top-six boundary, the panel only selects
+      // enough ordered winners to fill the remaining top-six places.
+      // All other tied entries share the first rank outside those places.
+      const winningSlots=Math.min(members.length,Math.max(0,7-position));
+      if(members.length>1&&winningSlots>0){
         const options=(tieDecisions||[]).filter(d=>d&&d.competition===competition&&d.scoreKey===group.key);
         const valid=options.find(d=>{
           const nums=d.orderedStartNumbers;
-          return Array.isArray(nums)&&nums.length===members.length&&
-            new Set(nums).size===members.length&&nums.every(n=>members.some(m=>m.startNo===n));
+          return Array.isArray(nums)&&nums.length===winningSlots&&
+            new Set(nums).size===winningSlots&&nums.every(n=>members.some(m=>m.startNo===n));
         });
         if(valid){
-          members.sort((a,b)=>valid.orderedStartNumbers.indexOf(a.startNo)-valid.orderedStartNumbers.indexOf(b.startNo));
+          const winnerOrder=valid.orderedStartNumbers;
+          members.sort((a,b)=>{
+            const ia=winnerOrder.indexOf(a.startNo),ib=winnerOrder.indexOf(b.startNo);
+            if(ia>=0&&ib>=0)return ia-ib;
+            if(ia>=0)return -1;
+            if(ib>=0)return 1;
+            return a.startNo-b.startNo;
+          });
           ordered=true;
         }
       }
       for(let i=0;i<members.length;i++){
         const item=members[i];
-        // Only exact-score groups affecting the first six places require a
-        // recorded jury decision. This includes a group spanning 6th/7th.
-        // Other exact ties receive a shared competition rank; startNo is
-        // strictly a deterministic display order, never a tie-break winner.
         const isUnresolved=members.length>1&&!ordered;
         const requiresDeliberation=isUnresolved&&position<=6;
-        const isSharedRank=isUnresolved&&!requiresDeliberation;
+        const isBeyondWinnerSlots=ordered&&members.length>winningSlots&&i>=winningSlots;
+        const isSharedRank=(isUnresolved&&!requiresDeliberation)||isBeyondWinnerSlots;
         const row={
           competition,startNo:item.startNo,meanScore:Number((item.sum/requiredJudges).toFixed(2)),
-          rank:requiresDeliberation?null:isSharedRank?position:position+i,
+          rank:requiresDeliberation?null:isSharedRank?position+(ordered?winningSlots:0):position+i,
           pendingDeliberation:requiresDeliberation,sharedRank:isSharedRank,
           tieGroupPosition:members.length>1?position:null,
           phase:official?"OFFICIAL":"INTERIM"

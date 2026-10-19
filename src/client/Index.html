@@ -767,20 +767,27 @@ function drawAdminStandings(){
    c.competition===competition&&c.phase==="REVIEW");
   for(const [tiePosition,numbers] of open){
    if(numbers.length<2)continue;
+   const winnerSlots=Math.min(numbers.length,7-tiePosition);
+   const crossesCutoff=winnerSlots<numbers.length;
    const box=node("div",{class:"panel warn admin-tie-panel"},[
     node("h3",null,["Musyawarah posisi "+tiePosition+" • "+branches[competition]]),
     node("p",{class:"small"},[
      "Nomor yang benar-benar seri: "+numbers.map(n=>String(n).padStart(3,"0")).join(", ")+
-     ". Tentukan urutan hanya berdasarkan berita acara dewan juri."
+     ". "+(crossesCutoff
+       ?"Pilih dan urutkan hanya "+winnerSlots+" nomor untuk mengisi enam besar. "+
+        "Sisa peserta mendapat peringkat bersama di luar enam besar."
+       :"Tentukan urutan seluruh nomor sesuai berita acara dewan juri.")
     ])
    ]);
-   const ordered=node("input",{placeholder:"Contoh: "+numbers.join(",")});
+   const ordered=node("input",{placeholder:"Masukkan "+winnerSlots+" nomor sesuai keputusan juri"});
    ordered.value="";
    const reason=node("input",{placeholder:"Alasan keputusan dan berita acara dewan juri"});
    reason.maxLength=500;
    ordered.disabled=!canDecide;reason.disabled=!canDecide;
    box.append(
-    node("label",null,["Urutan nomor start setelah musyawarah"]),ordered,
+    node("label",null,[crossesCutoff?
+     "Nomor pemenang untuk mengisi enam besar (berurutan)":
+     "Urutan nomor start setelah musyawarah"]),ordered,
     node("label",null,["Alasan keputusan (minimal 15 karakter)"]),reason
    );
    if(!canDecide)box.append(node("p",{class:"small"},[
@@ -790,9 +797,8 @@ function drawAdminStandings(){
    save.disabled=!canDecide;
    save.onclick=()=>{
     const vals=ordered.value.split(",").map(x=>Number(x.trim()));
-    const sorted=a=>a.slice().sort((a,b)=>a-b).join(",");
-    if(vals.length!==numbers.length||new Set(vals).size!==numbers.length||
-       sorted(vals)!==sorted(numbers)||reason.value.trim().length<15){
+    if(vals.length!==winnerSlots||new Set(vals).size!==winnerSlots||
+       !vals.every(n=>numbers.includes(n))||reason.value.trim().length<15){
      msg("Urutan harus memuat semua nomor yang seri tepat satu kali, disertai alasan minimal 15 karakter.",true);
      return;
     }

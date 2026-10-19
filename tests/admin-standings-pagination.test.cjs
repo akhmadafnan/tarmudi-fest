@@ -60,5 +60,5 @@ test("paginated Admin UI still computes deliberations from all standings",()=>{
 test("public lower ties use shared-rank language and remain anonymous",()=>{
  const pub=html.slice(html.indexOf("async function loadPublic(){"),html.indexOf("function publicView(){"));
  assert.match(pub,/p\.sharedRank\?"Peringkat bersama/);
- assert.match(html,/" (seri)"/);
+ assert.ok(html.includes('return "#"+entry.rank+" (seri)";'));
 });
