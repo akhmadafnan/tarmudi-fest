@@ -1,6 +1,6 @@
 "use strict";
 const fs=require("node:fs"),path=require("node:path");
-const repo=path.resolve(__dirname,"../..");
+const repo=path.resolve(__dirname,"..");
 const authPath=path.join(repo,"experiments/step01-firebase-gas/Code.js");
 const auth=fs.readFileSync(authPath,"utf8");
 const position=auth.indexOf("\nfunction doGet()");
