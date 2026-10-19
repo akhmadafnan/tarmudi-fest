@@ -15,8 +15,8 @@ small{color:#4b4b4b}.hidden{display:none}
 <h1>Tarmudi Fest 2026</h1>
 <p>Uji Firebase Authentication. Tidak ada data peserta atau penjurian di halaman ini.</p>
 <form id="form">
-<label for="username">Username</label>
-<input required name="username" id="username" autocomplete="username" placeholder="juri-thf-01" maxlength="40" pattern="[a-z0-9-]+">
+<label for="username">Username atau email uji</label>
+<input required name="username" id="username" autocomplete="username" placeholder="juri-thf-01 atau email uji" maxlength="110">
 <label for="password">Password</label>
 <input required type="password" name="password" id="password" autocomplete="current-password" minlength="8">
 <button type="submit" id="login">Masuk untuk uji</button>
@@ -35,19 +35,22 @@ const form=document.getElementById("form");
 const logout=document.getElementById("logout");
 let currentIdToken=null;
 function show(s){statusEl.textContent=s}
-show(CONFIG.apiKey&&CONFIG.projectId&&CONFIG.domain
+show(CONFIG.apiKey&&CONFIG.projectId
  ? "Uji terkonfigurasi. Silakan masuk memakai akun sintetis."
  : "Firebase belum terkonfigurasi; belum ada akun login.");
 form.addEventListener("submit",async function(event){
  event.preventDefault();
- if(!CONFIG.apiKey||!CONFIG.domain){show("Firebase belum dikonfigurasi.");return;}
+ if(!CONFIG.apiKey||!CONFIG.projectId){show("Firebase belum dikonfigurasi.");return;}
  const username=usernameInput.value.trim().toLowerCase();
- if(!/^[a-z0-9-]{3,40}$/.test(username)){show("Format username salah.");return;}
+ const isEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username);
+ if(!isEmail && !/^[a-z0-9-]{3,40}$/.test(username)){show("Format username/email tidak valid.");return;}
+ if(!isEmail && !CONFIG.domain){show("Domain akun internal belum disetel.");return;}
+ const email=isEmail ? username : username+"@"+CONFIG.domain;
  button.disabled=true; show("Memverifikasi melalui Firebase...");
  try{
   const reply=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+encodeURIComponent(CONFIG.apiKey),{
    method:"POST",headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({email:username+"@"+CONFIG.domain,password:passwordInput.value,returnSecureToken:true})
+   body:JSON.stringify({email,password:passwordInput.value,returnSecureToken:true})
   });
   // Password is never sent to GAS, GitHub, or any logging endpoint.
   passwordInput.value="";
