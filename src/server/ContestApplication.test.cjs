@@ -20,6 +20,7 @@ function app(){
  const repo={
   participants:()=>data.participants,checkins:()=>data.checkins,scores:()=>data.scores,settings:()=>data.settings,
   appendCheckin:x=>data.checkins.push(x),
+  replaceParticipants:x=>{data.participants=x.map(p=>({id:p.id,fullName:p.fullName,school:p.school,competition:p.competition,verified:p.status==="TERVERIFIKASI"}));return "BACKUP_TEST";},
   saveScore:(x,old)=>{if(old){Object.assign(old,x)}else data.scores.push({...x})},
   setPhase:(s,v)=>{s.state=v},
   appendAudit:(...args)=>data.logs.push(args)
@@ -80,4 +81,42 @@ test("No public ranking until three assigned jurors finalized",()=>{
 test("Unverified participants are not eligible for checkin",()=>{
  const s=app();s.data.participants[0].verified=false;
  assert.throws(()=>s.service.checkIn(admin,"TF26-THF-001"),/NOT_VERIFIED/);
+});
+
+function importRows(){
+ return [
+  {id:"TF26-MDG-101",fullName:"Fictional A",school:"TK Simulasi A",branch:"Mendongeng",status:"TERVERIFIKASI"},
+  {id:"TF26-MDG-102",fullName:"Fictional B",school:"TK Simulasi A",branch:"Mendongeng",status:"TERVERIFIKASI"},
+  {id:"TF26-THF-101",fullName:"Fictional C",school:"TK Simulasi B",branch:"Tahfidz",status:"TERVERIFIKASI"}
+ ];
+}
+test("Import preview validates accepted synthetic rows without mutating store",()=>{
+ const s=app();const before=s.data.participants.length;
+ const result=s.service.previewImport(admin,importRows());
+ assert.equal(result.canCommit,true);assert.equal(result.accepted,3);assert.equal(s.data.participants.length,before);
+});
+test("Import rejects duplicate source IDs and school delegation above two",()=>{
+ const s=app(),rows=importRows();
+ assert.equal(s.service.previewImport(admin,[...rows,rows[0]]).canCommit,false);
+ const third={...rows[0],id:"TF26-MDG-103"};
+ assert.equal(s.service.previewImport(admin,[...rows,third]).canCommit,false);
+});
+test("Registration officer and judge cannot import participant data",()=>{
+ const s=app();
+ assert.throws(()=>s.service.previewImport(judge,importRows()),/NOT_ALLOWED/);
+ assert.throws(()=>s.service.commitImport(registrar,importRows()),/NOT_ALLOWED/);
+});
+test("Admin import replacement backed up and audited only before check-in",()=>{
+ const s=app();const result=s.service.commitImport(admin,importRows());
+ assert.equal(result.imported,3);assert.equal(result.backupCreated,true);
+ assert.equal(s.data.participants.length,3);assert.equal(s.data.logs.length,1);
+ s.service.checkIn(admin,"TF26-MDG-101");
+ assert.throws(()=>s.service.commitImport(admin,importRows()),/IMPORT_LOCKED/);
+ assert.equal(s.data.participants.length,3);
+});
+test("Reject dangerous invalid input, invalid statuses and oversized files",()=>{
+ const s=app();
+ const invalid=[{...importRows()[0],status:"SOME_UNKNOWN_STATUS"}];
+ assert.equal(s.service.previewImport(admin,invalid).canCommit,false);
+ assert.throws(()=>s.service.previewImport(admin,Array(501).fill(importRows()[0])),/INVALID_IMPORT/);
 });
