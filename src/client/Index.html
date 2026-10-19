@@ -116,6 +116,63 @@ body{overflow-x:hidden}
  button:hover:not(:disabled){transform:none}
 }
 
+
+/* Jury module: index first, one anonymized scoring detail at a time. */
+.jury-heading{display:flex;justify-content:space-between;align-items:start;gap:16px;flex-wrap:wrap}
+.jury-heading>div{min-width:0}
+.jury-heading p{max-width:500px}
+.jury-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:16px 0 10px}
+.jury-summary-item{border:2px solid #202020;border-radius:7px;padding:13px;background:#fff8e8;display:grid;gap:3px}
+.jury-summary-item span{font-size:12px;color:#56564e;font-weight:750}
+.jury-summary-item strong{font-size:27px;font-variant-numeric:tabular-nums;line-height:1}
+.jury-phase{margin:12px 0 8px}
+.jury-search{margin-top:16px}
+.jury-search label{margin:0 0 7px}
+.jury-search input{width:100%}
+.jury-filters{margin:13px 0 2px;flex-wrap:wrap}
+.jury-index-count{margin:10px 0}
+.jury-index-list{display:grid;gap:9px}
+.jury-index-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(105px,auto) auto;gap:16px;align-items:center;border:2px solid #202020;border-radius:7px;padding:13px;background:#fff}
+.jury-index-number{display:grid;gap:2px;min-width:0}
+.jury-index-number .num{font-size:29px;line-height:1}
+.jury-index-own{display:grid;gap:6px;justify-items:start}
+.jury-status{display:inline-block;padding:5px 9px;border:1.5px solid #202020;border-radius:100px;font-size:12px;font-weight:800;white-space:nowrap}
+.jury-pending{background:#fff1bd}
+.jury-draft{background:#f4e6b8}
+.jury-done{background:#d5f18a}
+.jury-own-score{font-size:16px;font-variant-numeric:tabular-nums}
+.jury-index-row .jury-open{min-height:44px;white-space:nowrap}
+.jury-detail{max-width:720px;margin-inline:auto}
+.jury-back{margin-bottom:16px;min-height:44px}
+.jury-detail-number{font-size:clamp(29px,6vw,43px)!important;margin:6px 0 12px!important}
+.jury-score-form{margin-top:15px}
+.jury-detail-total{font-size:18px;font-weight:900;padding:14px;background:#fff8e8;border:2px solid #202020;border-radius:7px;margin-top:16px}
+.jury-form-actions{margin-top:17px}
+.jury-form-actions button{min-height:48px}
+@media(max-width:700px){
+ .jury-summary{gap:7px;margin-top:12px}
+ .jury-summary-item{padding:11px 8px}
+ .jury-summary-item span{font-size:11px}
+ .jury-summary-item strong{font-size:25px}
+ .jury-filters{flex-wrap:nowrap;overflow-x:auto;padding:3px 1px 10px;scrollbar-width:thin}
+ .jury-filters .chip{flex:0 0 auto}
+ .jury-index-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"num status" "open open";gap:10px;padding:12px}
+ .jury-index-number{grid-area:num}
+ .jury-index-own{grid-area:status;justify-items:end;text-align:right}
+ .jury-index-number .num{font-size:29px}
+ .jury-index-row .jury-open{grid-area:open;width:100%;min-height:46px}
+ .jury-back{width:100%}
+ .jury-form-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ .jury-form-actions button{width:100%}
+ .jury-detail-total{font-size:16px}
+}
+@media(max-width:370px){
+ .jury-index-row{padding:10px 9px}
+ .jury-index-own .jury-status{font-size:10px;padding:5px 6px}
+ .jury-index-number .num{font-size:25px}
+ .jury-summary-item strong{font-size:22px}
+}
+
 </style></head>
 <body><div class="shell">
 <header class="topbar"><div class="brand">TARMUDI <span>FEST</span> <strong>2026</strong></div><span class="tag">Kampus 2 • MIS Tarbiyatul Mubtadiin</span></header>
@@ -149,6 +206,7 @@ const CFG=<?!= publicConfig ?>;
 let TOKEN=null,IDENTITY=null,DATA=null,PUBLIC=false,BRANCH="THF",FILTER="";
 let REGISTRATION_BRANCH_FILTER="ALL";
 let NEW_CREDENTIALS=[];
+let JUDGE_SELECTED_NUMBER=null,JUDGE_SEARCH="",JUDGE_FILTER="ALL";
 const $=id=>document.getElementById(id);
 function text(value){return document.createTextNode(String(value===null||value===undefined?"":value));}
 function node(tag,props,children){
@@ -605,42 +663,209 @@ function drawRegistration(root,asAdmin){
  if(root)render(root,[wrap]);
  return wrap;
 }
-function drawJudge(root){
- const wrap=node("section",{class:"panel"},[]);
- wrap.append(node("h2",null,["Panel Juri • "+branches[DATA.competition]]));
- wrap.append(node("p",null,["Peserta ditampilkan dengan nomor start saja. Nama/sekolah tidak dikirim ke perangkat juri."]));
- const state=node("div",{class:"statline"},[node("div",{class:"stat"},["Status: "+DATA.phase]),node("div",{class:"stat"},[(DATA.entries||[]).length+" peserta check-in"])]);
- wrap.append(state);
- const list=node("div",{class:"results"});
- for(const entry of (DATA.entries||[])){
-  const card=node("div",{class:"panel"},[]);
-  const scoreTitle=node("h3",null,["Nomor "+String(entry.startNo).padStart(3,"0")]);
-  card.append(scoreTitle,node("p",{class:"small"},["Status nilai sendiri: "+entry.status]));
-  const numeric=[];
-  DATA.criteria.forEach((crit,index)=>{
-   const input=node("input",{type:"number",min:"0",max:String(crit[1]),step:"1",inputMode:"numeric"});
-   input.value=entry.ownPoints&&entry.ownPoints[index]!==undefined&&entry.ownPoints[index]!==null?entry.ownPoints[index]:"";
-   input.disabled=DATA.phase!=="JUDGING_OPEN"||entry.status==="FINAL";
-   numeric.push(input);
-   card.append(node("div",{class:"score-row"},[node("label",null,[crit[0],node("div",{class:"score-max"},["Maks. "+crit[1]+" poin"])]),input]));
-  });
-  const actions=node("div",{class:"controls"},[]);
-  for(const isFinal of [false,true]){
-   const btn=node("button",{class:isFinal?"green":"secondary"},[isFinal?"Finalisasi nilai":"Simpan draft"]);
-   btn.disabled=DATA.phase!=="JUDGING_OPEN"||entry.status==="FINAL";
-   btn.onclick=()=>{
-    const values=numeric.map(inp=>inp.value.trim()===""?null:Number(inp.value));
-    if(values.some((v,i)=>v!==null&&(!Number.isInteger(v)||v<0||v>DATA.criteria[i][1]))){msg("Periksa poin di luar batas.",true);return}
-    if(isFinal&&values.some(v=>v===null)){msg("Isi seluruh kriteria untuk finalisasi.",true);return}
-    if(isFinal&&!confirm("Finalisasi nomor "+String(entry.startNo).padStart(3,"0")+"? Setelah FINAL nilai terkunci."))return;
-    submitAction("SAVE_SCORE",{startNo:entry.startNo,points:values,final:isFinal},isFinal?"Nilai FINAL tersimpan di server.":"Draft tersimpan di server.");
-   };
-   actions.append(btn);
-  }
-  card.append(actions);list.append(card);
+// The Juri interface is intentionally limited to start number and own scoring
+// state. Never render participant ID, name, school, or another judge's scores.
+function tf26JudgeLabel(entry){
+ if(entry.status==="FINAL")return "Sudah dinilai";
+ if(entry.status==="DRAFT")return "Draft tersimpan";
+ return "Belum dinilai";
+}
+function tf26JudgePriority(entry){
+ return entry.status==="FINAL"?2:entry.status==="DRAFT"?1:0;
+}
+function tf26JudgeOwnTotal(entry,criteria){
+ if(entry.status!=="FINAL"||!Array.isArray(entry.ownPoints)||
+    entry.ownPoints.length!==criteria.length)return null;
+ let sum=0;
+ for(let i=0;i<criteria.length;i++){
+  const value=entry.ownPoints[i];
+  if(!Number.isInteger(value)||value<0||value>criteria[i][1])return null;
+  sum+=value;
  }
- if(!(DATA.entries||[]).length)list.append(node("div",{class:"noresults"},["Belum ada peserta check-in pada cabang ini."]));
- wrap.append(list);render(root,[wrap]);
+ return sum;
+}
+function tf26JudgeSort(a,b){
+ return tf26JudgePriority(a)-tf26JudgePriority(b)||a.startNo-b.startNo;
+}
+function tf26JudgeEntries(entries,query,status){
+ const needle=String(query||"").trim();
+ return (entries||[]).filter(entry=>{
+  if(!Number.isInteger(entry.startNo)||entry.startNo<1)return false;
+  if(needle && !String(entry.startNo).padStart(3,"0").includes(needle))return false;
+  return status==="ALL"||entry.status===status;
+ }).sort(tf26JudgeSort);
+}
+function drawJudge(root){
+ const entries=Array.isArray(DATA.entries)?DATA.entries:[];
+ const entry=entries.find(x=>x.startNo===JUDGE_SELECTED_NUMBER);
+ if(entry){
+  drawJudgeDetail(root,entry);
+  return;
+ }
+ JUDGE_SELECTED_NUMBER=null;
+ drawJudgeIndex(root,entries);
+}
+function drawJudgeIndex(root,entries){
+ const wrap=node("section",{class:"panel jury-workspace"},[]);
+ const header=node("div",{class:"jury-heading"},[
+  node("div",null,[
+   node("div",{class:"eyebrow"},["Indeks penilaian"]),
+   node("h2",null,["Panel Juri • "+branches[DATA.competition]])
+  ]),
+  node("p",{class:"small"},["Hanya nomor start dan nilai Anda sendiri yang ditampilkan. Identitas peserta tidak tersedia pada akun juri."])
+ ]);
+ wrap.append(header);
+ const totals={
+  pending:entries.filter(x=>x.status!=="DRAFT"&&x.status!=="FINAL").length,
+  draft:entries.filter(x=>x.status==="DRAFT").length,
+  final:entries.filter(x=>x.status==="FINAL").length
+ };
+ wrap.append(node("div",{class:"jury-summary"},[
+  node("div",{class:"jury-summary-item"},[node("span",null,["Belum dinilai"]),node("strong",null,[totals.pending])]),
+  node("div",{class:"jury-summary-item"},[node("span",null,["Draft"]),node("strong",null,[totals.draft])]),
+  node("div",{class:"jury-summary-item"},[node("span",null,["Selesai"]),node("strong",null,[totals.final])])
+ ]));
+ const state=node("p",{class:"small jury-phase"},[
+  DATA.phase==="JUDGING_OPEN"?"Penjurian dibuka. Pilih nomor untuk memberikan nilai.":
+  "Status: "+DATA.phase+". Penilaian belum dibuka atau sedang ditutup; Anda tetap bisa melihat daftar nomor."
+ ]);
+ wrap.append(state);
+ const searchWrap=node("div",{class:"jury-search"},[]);
+ const label=node("label",null,["Cari berdasarkan nomor start"]);
+ const search=node("input",{type:"search",placeholder:"Contoh: 001 atau 004",inputMode:"numeric"});
+ search.setAttribute("aria-label","Cari nomor start peserta");
+ search.setAttribute("autocomplete","off");
+ search.value=JUDGE_SEARCH;
+ searchWrap.append(label,search);
+ wrap.append(searchWrap);
+ const tabs=node("div",{class:"chips jury-filters"},[]);
+ tabs.setAttribute("role","group");
+ tabs.setAttribute("aria-label","Filter status penilaian sendiri");
+ const choices=[["ALL","Semua"],["NOT_STARTED","Belum dinilai"],["DRAFT","Draft"],["FINAL","Selesai"]];
+ const indexList=node("div",{class:"jury-index-list"},[]);
+ const count=node("p",{class:"small jury-index-count"},[]);
+ function paint(){
+  const filtered=tf26JudgeEntries(entries,JUDGE_SEARCH,JUDGE_FILTER);
+  for(const chip of tabs.children){
+   const chosen=chip.dataset.status===JUDGE_FILTER;
+   chip.classList.toggle("selected",chosen);
+   chip.setAttribute("aria-pressed",String(chosen));
+  }
+  count.textContent=filtered.length+" dari "+entries.length+" nomor ditampilkan";
+  render(indexList,filtered.map(item=>{
+   const start=String(item.startNo).padStart(3,"0");
+   const score=tf26JudgeOwnTotal(item,DATA.criteria);
+   const row=node("div",{class:"jury-index-row"},[]);
+   const about=node("div",{class:"jury-index-number"},[
+    node("span",{class:"small"},["Nomor start"]),
+    node("strong",{class:"num"},[start])
+   ]);
+   const own=node("div",{class:"jury-index-own"},[
+    node("span",{class:"jury-status "+(item.status==="FINAL"?"jury-done":item.status==="DRAFT"?"jury-draft":"jury-pending")},[tf26JudgeLabel(item)]),
+    node("strong",{class:"jury-own-score"},[score===null?"—":score+" / 100"])
+   ]);
+   const action=node("button",{class:"small-btn jury-open "+(item.status==="FINAL"?"secondary":"green")},[
+    item.status==="FINAL"?"Lihat nilai":item.status==="DRAFT"?"Lanjutkan draft":"Buka penilaian"
+   ]);
+   action.type="button";
+   action.setAttribute("aria-label",item.status==="FINAL"?"Lihat nilai sendiri nomor "+start:"Buka formulir nomor "+start);
+   action.onclick=()=>{
+    JUDGE_SELECTED_NUMBER=item.startNo;
+    drawJudge(root);
+   };
+   row.append(about,own,action);
+   return row;
+  }));
+  if(!filtered.length){
+   indexList.append(node("div",{class:"noresults"},[
+    entries.length?"Tidak ditemukan nomor dengan pencarian/status tersebut.":"Belum ada peserta yang check-in di cabang ini."
+   ]));
+  }
+ }
+ for(const [value,title] of choices){
+  const button=node("button",{class:"chip"},[title]);
+  button.type="button";
+  button.dataset.status=value;
+  button.onclick=()=>{JUDGE_FILTER=value;paint();};
+  tabs.append(button);
+ }
+ search.oninput=()=>{JUDGE_SEARCH=search.value.replace(/[^0-9]/g,"").slice(0,5);paint();};
+ wrap.append(tabs,count,indexList);
+ paint();
+ render(root,[wrap]);
+}
+function drawJudgeDetail(root,entry){
+ const code=String(entry.startNo).padStart(3,"0");
+ const finalized=entry.status==="FINAL";
+ const canWrite=DATA.phase==="JUDGING_OPEN"&&!finalized;
+ const wrap=node("section",{class:"panel jury-detail"},[]);
+ const back=node("button",{class:"secondary jury-back"},["← Kembali ke indeks"]);
+ back.type="button";
+ back.onclick=()=>{JUDGE_SELECTED_NUMBER=null;drawJudge(root);};
+ wrap.append(back);
+ wrap.append(node("div",{class:"eyebrow"},[branches[DATA.competition]+" • Nomor start"]));
+ wrap.append(node("h2",{class:"jury-detail-number"},["Nomor "+code]));
+ wrap.append(node("p",{class:"small"},[
+  finalized?"Nilai FINAL sudah terkunci. Anda hanya dapat melihat nilai sendiri.":
+  DATA.phase!=="JUDGING_OPEN"?"Penjurian belum dibuka. Kolom penilaian belum dapat diubah.":
+  "Isi poin berdasarkan kriteria. Simpan draft atau finalisasi setelah seluruh kriteria lengkap."
+ ]));
+ const ownStatus=node("div",{class:"jury-status "+(finalized?"jury-done":entry.status==="DRAFT"?"jury-draft":"jury-pending")},[tf26JudgeLabel(entry)]);
+ wrap.append(ownStatus);
+ const form=node("div",{class:"jury-score-form"},[]);
+ const inputs=[];
+ const criteria=Array.isArray(DATA.criteria)?DATA.criteria:[];
+ criteria.forEach((criterion,i)=>{
+  const id="jury-score-"+entry.startNo+"-"+i;
+  const line=node("div",{class:"score-row"},[]);
+  const label=node("label",null,[criterion[0],
+   node("div",{class:"score-max"},["Maksimum "+criterion[1]+" poin"])]);
+  label.htmlFor=id;
+  const input=node("input",{type:"number",min:"0",max:String(criterion[1]),step:"1",inputMode:"numeric"});
+  input.id=id;
+  input.value=entry.ownPoints&&entry.ownPoints[i]!==undefined&&entry.ownPoints[i]!==null?String(entry.ownPoints[i]):"";
+  input.disabled=!canWrite;
+  input.setAttribute("aria-label",criterion[0]+" (maksimum "+criterion[1]+")");
+  inputs.push(input);line.append(label,input);form.append(line);
+ });
+ wrap.append(form);
+ const total=node("div",{class:"jury-detail-total"},[]);
+ function points(){
+  return inputs.map(input=>input.value.trim()===""?null:Number(input.value));
+ }
+ function valid(values,complete){
+  if(values.some((value,i)=>value!==null&&(!Number.isInteger(value)||value<0||value>criteria[i][1])))return false;
+  return !complete||values.every(value=>value!==null);
+ }
+ function refresh(){
+  const values=points();
+  const filled=values.filter(x=>x!==null).length;
+  total.textContent=filled===0?"Belum ada poin diisi":(values.reduce((sum,x)=>sum+(Number.isInteger(x)?x:0),0)+" / 100 poin sementara");
+ }
+ inputs.forEach(input=>{input.oninput=refresh;});
+ refresh();
+ wrap.append(total);
+ const actions=node("div",{class:"controls jury-form-actions"},[]);
+ for(const final of [false,true]){
+  const button=node("button",{class:final?"green":"secondary"},[
+   final?"Finalisasi nilai":"Simpan draft"
+  ]);
+  button.type="button";button.disabled=!canWrite;
+  button.onclick=async()=>{
+   const values=points();
+   if(!valid(values,final)){msg(final?"Isi seluruh kriteria dengan poin bulat sesuai batasnya.":"Periksa poin yang melebihi batas atau bukan bilangan bulat.",true);return;}
+   if(final&&!confirm("Finalisasi Nomor "+code+"? Setelah FINAL nilai Anda terkunci dan tidak dapat diubah."))return;
+   const saved=await submitAction("SAVE_SCORE",{startNo:entry.startNo,points:values,final},
+    final?"Nilai FINAL tersimpan.":"Draft penilaian tersimpan.");
+   if(saved){
+    JUDGE_SELECTED_NUMBER=null;
+    if(DATA&&DATA.role==="juri")drawWorkspace();
+   }
+  };
+  actions.append(button);
+ }
+ wrap.append(actions);
+ render(root,[wrap]);
 }
 function tabs(){
  const root=$("public-tabs");
