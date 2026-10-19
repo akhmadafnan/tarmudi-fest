@@ -12,3 +12,6 @@ test("Reset branch filter on logout, preserving privacy of shared device",()=>{
  assert.match(html,/FILTER="";REGISTRATION_BRANCH_FILTER="ALL";/);
  assert.ok(html.includes('JUDGE_SELECTED_NUMBER=null;JUDGE_SEARCH="";JUDGE_FILTER="ALL";'));
 });
+test("Logout clears private Admin standings search and pagination on shared devices",()=>{
+ assert.match(html,/for\(const code of \["MDG","THF","MWN"\]\)\{TF26_ADMIN_STANDINGS_SEARCH\[code\]="";TF26_ADMIN_STANDINGS_PAGE\[code\]=1;\}/);
+});
