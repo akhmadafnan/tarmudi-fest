@@ -37,7 +37,7 @@ function fixture(opts={}){
     FirebaseIdentityVerifier:FirebaseVerifier,
     UrlFetchApp:{},Utilities:{},Date,Math,
     LockService:{getScriptLock(){return{tryLock(){return opts.locked!==true;},releaseLock(){unlocks++;}};}},
-    tf26Error_(err){return {ok:false,error:["NOT_ALLOWED","INVALID_REQUEST","ACCOUNT_EXISTS","ACCOUNT_LIMIT","BUSY_RETRY"].includes(err.message)?err.message:"REQUEST_FAILED"};}
+    tf26Error_(err){return {ok:false,error:["NOT_ALLOWED","INVALID_REQUEST","ACCOUNT_EXISTS","ACCOUNT_LIMIT","JUDGES_FULL","BUSY_RETRY"].includes(err.message)?err.message:"REQUEST_FAILED"};}
   };
   vm.createContext(ctx);
   vm.runInContext(section,ctx,{timeout:2000});
@@ -93,4 +93,13 @@ test("UAT frontend only displays two test judge creation flow, without passwords
  assert.doesNotMatch(admin,/const accounts=drawAccountProvisioner\(\)/);
  assert.doesNotMatch(html,/TF26_TEST_JURY_CREDS.*localStorage/);
  assert.match(html,/Unduh kredensial uji \(privat\)/);
+});
+
+test("A fourth active judge within Tahfidz is rejected before allowlist mutation",()=>{
+ const env=fixture();
+ assert.equal(env.provision("admin-token","juri-thf-02","signed02").ok,true);
+ assert.equal(env.provision("admin-token","juri-thf-03","signed03").ok,true);
+ const before=Object.keys(env.map).length;
+ assert.equal(env.provision("admin-token","juri-thf-01","signedother").error,"JUDGES_FULL");
+ assert.equal(Object.keys(env.map).length,before);
 });

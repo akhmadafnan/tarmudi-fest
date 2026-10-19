@@ -430,7 +430,7 @@ function drawUatTahfidzJudges(){
  const note=node("p",{class:"small"},["Juri aktif: "+count+" / 3"]);
  root.append(note);
  const create=node("button",{class:"green"},["Buat dua juri uji Tahfidz"]);
- create.disabled=count!==1||!CFG.apiKey;
+ create.disabled=(count<1||count>=3)||!CFG.apiKey;
  const download=node("button",{class:"secondary"},["Unduh kredensial uji (privat)"]);
  download.disabled=!TF26_TEST_JURY_CREDS.some(x=>x.linked);
  const status=node("div",{class:"small"},[]);
@@ -502,7 +502,7 @@ function drawUatTahfidzJudges(){
    status.textContent="Dua juri uji siap. Unduh CSV password privat. Refresh panel untuk melihat juri aktif 3/3.";
    msg("Dua akun juri uji berhasil diberikan izin Tahfidz. Simpan CSV sebelum keluar.");
   }catch(e){status.textContent=String(e.message||"Koneksi gagal")+"; klik kembali untuk melanjutkan bila diperlukan.";paint();}
-  finally{busy(false);create.disabled=count!==1;}
+  finally{busy(false);create.disabled=count<1||count>=3;}
  };
  paint();
  return root;

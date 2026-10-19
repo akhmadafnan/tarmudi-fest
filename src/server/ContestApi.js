@@ -33,7 +33,7 @@ function tf26Error_(error){
   // A bounded set of user-actionable errors; never reveal internal system
   // exception details, raw token, Firebase config, participant identity.
   const allowed=[
-    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","ACCOUNT_EXISTS","ACCOUNT_LIMIT","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
+    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","ACCOUNT_EXISTS","ACCOUNT_LIMIT","JUDGES_FULL","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
     "INVALID_POINTS","NOT_CHECKED_IN","SCORE_LOCKED","JUDGING_NOT_OPEN",
     "JUDGES_INCOMPLETE","WRONG_PHASE","BUSY_RETRY","DATABASE_NOT_READY"
   ];
@@ -82,6 +82,8 @@ function apiProvisionAccount(adminToken,username,newUserIdToken){
         }
       }
       const active=Object.values(map).filter(x=>x&&x.active===true);
+      const sameJury=active.filter(x=>x.role==="juri"&&x.competition===spec.competition).length;
+      if(spec.role==="juri"&&sameJury>=3)throw Error("JUDGES_FULL");
       if(active.length>=13)throw Error("ACCOUNT_LIMIT");
       map[newIdentity.uid]={role:spec.role,competition:spec.competition,username,active:true};
       props.setProperty("TF26_AUTH_ALLOWLIST_JSON",JSON.stringify(map));
