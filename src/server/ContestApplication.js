@@ -193,7 +193,7 @@ class TF26Application {
   resolveTie(actor,req){
     this.assertActor_(actor,["admin"]);
     if(!req||!["MDG","THF","MWN"].includes(req.competition)||
-      !Array.isArray(req.orderedStartNumbers)||req.orderedStartNumbers.length<2||
+      !Array.isArray(req.orderedStartNumbers)||req.orderedStartNumbers.length<1||
       !req.orderedStartNumbers.every(n=>Number.isInteger(n)&&n>0)||
       typeof req.reason!=="string"||req.reason.trim().length<15||req.reason.length>500)
       throw Error("INVALID_TIE_DECISION");
