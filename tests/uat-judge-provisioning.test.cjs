@@ -34,10 +34,14 @@ function fixture(opts={}){
       throw Error("UNAUTHORIZED");
     },
     tf26Properties_(){return props;},
+    tf26Service_(){return{
+      setting_(){return{state:opts.judgingOpen?"JUDGING_OPEN":"READY"};},
+      store_:{scores(){return opts.hasScores?[{competition:"THF",startNo:1,status:"FINAL"}]:[];}}
+    };},
     FirebaseIdentityVerifier:FirebaseVerifier,
     UrlFetchApp:{},Utilities:{},Date,Math,
     LockService:{getScriptLock(){return{tryLock(){return opts.locked!==true;},releaseLock(){unlocks++;}};}},
-    tf26Error_(err){return {ok:false,error:["NOT_ALLOWED","INVALID_REQUEST","ACCOUNT_EXISTS","ACCOUNT_LIMIT","JUDGES_FULL","BUSY_RETRY"].includes(err.message)?err.message:"REQUEST_FAILED"};}
+    tf26Error_(err){return {ok:false,error:["NOT_ALLOWED","INVALID_REQUEST","ACCOUNT_EXISTS","ACCOUNT_LIMIT","JUDGES_FULL","PROVISION_LOCKED","BUSY_RETRY"].includes(err.message)?err.message:"REQUEST_FAILED"};}
   };
   vm.createContext(ctx);
   vm.runInContext(section,ctx,{timeout:2000});
@@ -95,11 +99,22 @@ test("UAT frontend only displays two test judge creation flow, without passwords
  assert.match(html,/Unduh kredensial uji \(privat\)/);
 });
 
-test("A fourth active judge within Tahfidz is rejected before allowlist mutation",()=>{
+test("Replacing unscored pilot juri before judging preserves exactly 3 active jurors",()=>{
  const env=fixture();
  assert.equal(env.provision("admin-token","juri-thf-02","signed02").ok,true);
  assert.equal(env.provision("admin-token","juri-thf-03","signed03").ok,true);
- const before=Object.keys(env.map).length;
- assert.equal(env.provision("admin-token","juri-thf-01","signedother").error,"JUDGES_FULL");
- assert.equal(Object.keys(env.map).length,before);
+ const replaced=env.provision("admin-token","juri-thf-01","signedother");
+ assert.equal(replaced.ok,true);
+ const active=Object.values(env.map).filter(x=>x.role==="juri"&&x.competition==="THF"&&x.active);
+ assert.equal(active.length,3);
+ assert.equal(env.map.pilotUid.active,false);
+});
+test("Any new judge or pilot UID replacement is blocked once scoring opens",()=>{
+ for(const opts of [{judgingOpen:true},{hasScores:true}]){
+  const env=fixture(opts),before=Object.keys(env.map).length;
+  assert.equal(env.provision("admin-token","juri-thf-02","signed02").error,"PROVISION_LOCKED");
+  assert.equal(env.provision("admin-token","juri-thf-01","signedother").error,"PROVISION_LOCKED");
+  assert.equal(Object.keys(env.map).length,before);
+  assert.equal(env.map.pilotUid.active,true);
+ }
 });

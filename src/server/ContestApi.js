@@ -34,7 +34,7 @@ function tf26Error_(error){
   // exception details, raw token, Firebase config, participant identity.
   const allowed=[
     "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","INVALID_CORRECTION","CORRECTION_CLOSED","SCORE_NOT_FINAL",
-    "SCORE_CHANGED_REFRESH","NO_SCORE_CHANGE","SCORE_DATA_INVALID","ACCOUNT_EXISTS","ACCOUNT_LIMIT","JUDGES_FULL","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
+    "SCORE_CHANGED_REFRESH","NO_SCORE_CHANGE","SCORE_DATA_INVALID","ACCOUNT_EXISTS","ACCOUNT_LIMIT","JUDGES_FULL","PROVISION_LOCKED","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
     "INVALID_POINTS","NOT_CHECKED_IN","SCORE_LOCKED","JUDGING_NOT_OPEN",
     "JUDGES_INCOMPLETE","WRONG_PHASE","BUSY_RETRY","DATABASE_NOT_READY"
   ];
@@ -63,6 +63,13 @@ function apiProvisionAccount(adminToken,username,newUserIdToken){
       throw Error("INVALID_REQUEST");
     const spec=tf26SeedSpec_(username);
     if(!spec)throw Error("INVALID_REQUEST");
+    // Never swap active juror identities after scoring has opened. Such a swap
+    // could orphan scores assigned to the former Firebase UID.
+    const contestApp=tf26Service_();
+    const contestSettings=contestApp.setting_(spec.competition);
+    if(!["READY","DRAFT"].includes(contestSettings.state)||
+       contestApp.store_.scores().some(s=>s.competition===spec.competition))
+      throw Error("PROVISION_LOCKED");
     const props=tf26Properties_();
     const newIdentity=new FirebaseIdentityVerifier(
       props,UrlFetchApp,Utilities,()=>Math.floor(Date.now()/1000)
