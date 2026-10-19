@@ -201,17 +201,22 @@ class TF26Application {
       const conf=this.setting_(req.competition);
       if(conf.state!=="REVIEW")throw Error("WRONG_PHASE");
       const all=this.publicResults(req.competition).results;
-      const pending=all.filter(x=>x.pendingDeliberation);
+      const pending=all.filter(x=>x.pendingDeliberation===true);
       const candidates=pending.filter(x=>req.orderedStartNumbers.includes(x.startNo));
       if(candidates.length!==req.orderedStartNumbers.length||
         new Set(req.orderedStartNumbers).size!==req.orderedStartNumbers.length)
         throw Error("INVALID_TIE_DECISION");
-      // All selected participants must share a tied score group.
-      if(new Set(candidates.map(x=>x.meanScore)).size!==1||
-        pending.filter(x=>x.meanScore===candidates[0].meanScore).length!==candidates.length)
+      // An exact-score tie is identified by its pre-deliberation group
+      // position. Equal *rounded means* alone do not prove a genuine tie,
+      // particularly in Tahfidz with criterion-priority ordering.
+      const tiedPosition=candidates[0].tieGroupPosition;
+      if(!Number.isInteger(tiedPosition)||tiedPosition>6||
+        candidates.some(x=>x.tieGroupPosition!==tiedPosition)||
+        pending.filter(x=>x.tieGroupPosition===tiedPosition).length!==candidates.length)
         throw Error("INVALID_TIE_DECISION");
       const key=this.tieKey_(req.competition,candidates[0].startNo,conf);
-      if(!key)throw Error("INVALID_TIE_DECISION");
+      if(!key||candidates.some(x=>this.tieKey_(req.competition,x.startNo,conf)!==key))
+        throw Error("INVALID_TIE_DECISION");
       if(this.store_.tieDecisions().some(d=>d.competition===req.competition&&d.scoreKey===key))
         throw Error("TIE_ALREADY_DECIDED");
       const payload={competition:req.competition,orderedStartNumbers:req.orderedStartNumbers,
@@ -243,7 +248,10 @@ class TF26Application {
       const count=this.store_.checkins().filter(x=>x.competition===competition).length;
       const results=this.publicResults(competition).results;
       if(results.length!==count||count<6)throw Error("INCOMPLETE_SCORES");
-      if(results.slice(0,6).some(x=>x.pendingDeliberation||x.rank===null))
+      // Every unresolved top-six or 6th-place-boundary tie must be decided.
+      // Lower shared ranks do not prevent publication.
+      if(results.some(x=>x.pendingDeliberation===true)||
+        results.slice(0,6).some(x=>!Number.isInteger(x.rank)))
         throw Error("TIE_RESOLUTION_REQUIRED");
       const now=this.stamp_();
       this.store_.markOfficial(conf,actor.uid,now);

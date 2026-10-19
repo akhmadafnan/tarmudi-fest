@@ -92,10 +92,18 @@ class TF26Domain {
       }
       for(let i=0;i<members.length;i++){
         const item=members[i];
+        // Only exact-score groups affecting the first six places require a
+        // recorded jury decision. This includes a group spanning 6th/7th.
+        // Other exact ties receive a shared competition rank; startNo is
+        // strictly a deterministic display order, never a tie-break winner.
         const isUnresolved=members.length>1&&!ordered;
+        const requiresDeliberation=isUnresolved&&position<=6;
+        const isSharedRank=isUnresolved&&!requiresDeliberation;
         const row={
           competition,startNo:item.startNo,meanScore:Number((item.sum/requiredJudges).toFixed(2)),
-          rank:isUnresolved?null:position+i,pendingDeliberation:isUnresolved,
+          rank:requiresDeliberation?null:isSharedRank?position:position+i,
+          pendingDeliberation:requiresDeliberation,sharedRank:isSharedRank,
+          tieGroupPosition:members.length>1?position:null,
           phase:official?"OFFICIAL":"INTERIM"
         };
         if(official){

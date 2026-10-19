@@ -213,6 +213,17 @@ body{overflow-x:hidden}
 /* Separate jury deliberation actions from the reason input on every screen. */
 .tie-resolution-save{display:block;margin-top:18px;min-height:48px}
 @media(max-width:700px){.tie-resolution-save{width:100%;margin-top:20px}}
+/* 200+ participant Admin standings, responsive and keyboard accessible. */
+.admin-standings-search{margin:14px 0 12px}
+.admin-standings-search label{margin:0 0 7px}
+.admin-standings-pagination{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0 20px}
+.admin-standings-pagination .small{margin-right:auto}
+.admin-tie-panel{margin-top:18px}
+@media(max-width:700px){
+ .admin-standings-pagination{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .admin-standings-pagination .small{grid-column:1/-1}
+ .admin-standings-pagination button{width:100%;min-width:0}
+}
 </style></head>
 <body><div class="shell">
 <header class="topbar"><div class="brand">TARMUDI <span>FEST</span> <strong>2026</strong></div><span class="tag">Kampus 2 • MIS Tarbiyatul Mubtadiin</span></header>
@@ -653,46 +664,130 @@ function drawSchemeEditor(root,conf){
  */
 function tf26RankLabel(entry,admin){
  if(entry&&entry.pendingDeliberation===true)return admin?"Perlu musyawarah":"Seri";
+ if(entry&&entry.sharedRank===true&&Number.isInteger(entry.rank)&&entry.rank>0)
+  return "#"+entry.rank+" (seri)";
  if(entry&&Number.isInteger(entry.rank)&&entry.rank>0)return "#"+entry.rank;
  return "Peringkat belum tersedia";
 }
+/**
+ * Only render one page (20 rows) at a time even when Admin has 200+ results.
+ * The complete standings remain available for search and jury auditing.
+ * Filters and paging never hide mandatory jury deliberation controls.
+ */
+function tf26AdminStandingPage(entries,query,requestedPage,pageSize){
+ const list=Array.isArray(entries)?entries:[];
+ const needle=String(query||"").trim().toLocaleLowerCase("id-ID");
+ const matching=list.filter(item=>{
+  if(!needle)return true;
+  return [String(item.startNo).padStart(3,"0"),item.startNo,item.fullName,item.school]
+   .some(value=>String(value||"").toLocaleLowerCase("id-ID").includes(needle));
+ });
+ const size=Number.isInteger(pageSize)&&pageSize>0?pageSize:20;
+ const pageCount=Math.max(1,Math.ceil(matching.length/size));
+ const page=Math.min(pageCount,Math.max(1,Number.isInteger(requestedPage)?requestedPage:1));
+ return {total:matching.length,page,pageCount,rows:matching.slice((page-1)*size,page*size)};
+}
+const TF26_ADMIN_STANDINGS_PAGE_SIZE=20;
+const TF26_ADMIN_STANDINGS_SEARCH={MDG:"",THF:"",MWN:""};
+const TF26_ADMIN_STANDINGS_PAGE={MDG:1,THF:1,MWN:1};
 function drawAdminStandings(){
  const section=node("section",{class:"panel"},[
   node("h2",null,["Rekap hasil internal Admin"]),
-  node("p",{class:"small"},["Data berikut hanya untuk Admin. Publik tetap melihat nomor-only sampai pengesahan resmi."])
+  node("p",{class:"small"},[
+   "Enam besar menjadi batas musyawarah wajib, termasuk seri yang melintasi posisi keenam. ",
+   "Nilai seri di luar enam besar memperoleh peringkat bersama tanpa memerlukan musyawarah. ",
+   "Data identitas hanya ditampilkan kepada Admin."
+  ])
  ]);
  for(const group of (DATA.privateStandings||[])){
-  section.append(node("h3",null,[branches[group.competition]]));
-  const list=node("div",{class:"results"},group.items.map(r=>{
-   const label=tf26RankLabel(r,true);
-   return node("div",{class:"rank-row"},[
-    node("div",null,[node("strong",null,[label+" • Nomor "+String(r.startNo).padStart(3,"0")]),
-      node("div",{class:"small"},[r.fullName+" — "+r.school])]),
-    node("div",{class:"num"},[r.meanScore.toFixed(2)])
-   ]);
-  }));
-  if(!group.items.length)list.append(node("p",{class:"small"},["Belum ada hasil lengkap seluruh juri wajib."]));
-  section.append(list);
-  const open=new Map();
-  for(const item of group.items.filter(x=>x.pendingDeliberation)){
-    const groupKey=item.meanScore.toFixed(2);
-    if(!open.has(groupKey))open.set(groupKey,[]);
-    open.get(groupKey).push(item.startNo);
+  const competition=group.competition;
+  section.append(node("h3",null,[branches[competition]]));
+  const standings=Array.isArray(group.items)?group.items:[];
+  const searchWrap=node("div",{class:"admin-standings-search"},[]);
+  const searchLabel=node("label",null,["Cari nomor start, peserta atau sekolah"]);
+  const search=node("input",{type:"search",placeholder:"Cari nomor, nama atau sekolah..."});
+  search.id="admin-standings-search-"+competition;
+  searchLabel.htmlFor=search.id;
+  search.value=TF26_ADMIN_STANDINGS_SEARCH[competition]||"";
+  search.setAttribute("autocomplete","off");
+  search.setAttribute("aria-label","Cari hasil "+branches[competition]);
+  searchWrap.append(searchLabel,search);
+  section.append(searchWrap);
+  const list=node("div",{class:"results admin-standings-results"},[]);
+  const pagination=node("div",{class:"admin-standings-pagination"},[]);
+  const count=node("span",{class:"small"},[]);
+  const previous=node("button",{class:"secondary small-btn"},["← Sebelumnya"]);
+  const next=node("button",{class:"secondary small-btn"},["Berikutnya →"]);
+  previous.type="button";next.type="button";
+  pagination.append(count,previous,next);
+  section.append(list,pagination);
+  function paint(){
+   const view=tf26AdminStandingPage(standings,
+    TF26_ADMIN_STANDINGS_SEARCH[competition],
+    TF26_ADMIN_STANDINGS_PAGE[competition],TF26_ADMIN_STANDINGS_PAGE_SIZE);
+   TF26_ADMIN_STANDINGS_PAGE[competition]=view.page;
+   render(list,view.rows.map(item=>{
+    const label=tf26RankLabel(item,true);
+    return node("div",{class:"rank-row"},[
+     node("div",null,[
+      node("strong",null,[label+" • Nomor "+String(item.startNo).padStart(3,"0")]),
+      node("div",{class:"small"},[(item.fullName||"")+" — "+(item.school||"")])
+     ]),
+     node("div",{class:"num"},[Number(item.meanScore).toFixed(2)])
+    ]);
+   }));
+   if(!view.rows.length){
+    list.append(node("p",{class:"small noresults"},[
+     standings.length?"Tidak ada hasil yang cocok. Ubah pencarian.":"Belum ada hasil lengkap seluruh juri wajib."
+    ]));
+   }
+   count.textContent=view.total+" hasil • Halaman "+view.page+" dari "+view.pageCount;
+   previous.disabled=view.page<=1;
+   next.disabled=view.page>=view.pageCount;
   }
-  for(const [score,numbers] of open){
+  search.oninput=()=>{
+   TF26_ADMIN_STANDINGS_SEARCH[competition]=search.value;
+   TF26_ADMIN_STANDINGS_PAGE[competition]=1;
+   paint();
+  };
+  previous.onclick=()=>{TF26_ADMIN_STANDINGS_PAGE[competition]--;paint();};
+  next.onclick=()=>{TF26_ADMIN_STANDINGS_PAGE[competition]++;paint();};
+  paint();
+  // The required deliberation action is independent of the current page.
+  // Do not use rounded meanScore as a grouping key; different Tahfidz
+  // criterion totals can have the same public average.
+  const open=new Map();
+  for(const item of standings.filter(x=>x.pendingDeliberation===true)){
+   const key=item.tieGroupPosition;
+   if(!Number.isInteger(key)||key<1||key>6)continue;
+   if(!open.has(key))open.set(key,[]);
+   open.get(key).push(item.startNo);
+  }
+  const canDecide=(DATA.config||[]).some(c=>
+   c.competition===competition&&c.phase==="REVIEW");
+  for(const [tiePosition,numbers] of open){
    if(numbers.length<2)continue;
-   const box=node("div",{class:"panel warn"},[
-    node("h3",null,["Musyawarah nilai seri • "+branches[group.competition]]),
-    node("p",{class:"small"},["Nomor seri: "+numbers.map(n=>String(n).padStart(3,"0")).join(", ")+". Masukkan urutan pemenang hasil musyawarah juri."])
+   const box=node("div",{class:"panel warn admin-tie-panel"},[
+    node("h3",null,["Musyawarah posisi "+tiePosition+" • "+branches[competition]]),
+    node("p",{class:"small"},[
+     "Nomor yang benar-benar seri: "+numbers.map(n=>String(n).padStart(3,"0")).join(", ")+
+     ". Tentukan urutan hanya berdasarkan berita acara dewan juri."
+    ])
    ]);
-   const ordered=node("input",{placeholder:"Contoh: 2,1"});
+   const ordered=node("input",{placeholder:"Contoh: "+numbers.join(",")});
    ordered.value="";
-   ordered.placeholder="Masukkan urutan semua nomor setelah musyawarah, contoh: 2,4";
    const reason=node("input",{placeholder:"Alasan keputusan dan berita acara dewan juri"});
    reason.maxLength=500;
-   box.append(node("label",null,["Urutan nomor start setelah musyawarah"]),ordered,
-     node("label",null,["Alasan keputusan (minimal 15 karakter)"]),reason);
+   ordered.disabled=!canDecide;reason.disabled=!canDecide;
+   box.append(
+    node("label",null,["Urutan nomor start setelah musyawarah"]),ordered,
+    node("label",null,["Alasan keputusan (minimal 15 karakter)"]),reason
+   );
+   if(!canDecide)box.append(node("p",{class:"small"},[
+    "Keputusan baru bisa dicatat setelah penjurian ditutup dan masuk tahap REVIEW."
+   ]));
    const save=node("button",{class:"green tie-resolution-save"},["Rekam keputusan musyawarah"]);
+   save.disabled=!canDecide;
    save.onclick=()=>{
     const vals=ordered.value.split(",").map(x=>Number(x.trim()));
     const sorted=a=>a.slice().sort((a,b)=>a-b).join(",");
@@ -702,8 +797,9 @@ function drawAdminStandings(){
      return;
     }
     if(!confirm("Rekam keputusan seri ini sesuai berita acara dewan juri?"))return;
-    submitAction("RESOLVE_TIE",{competition:group.competition,
-      orderedStartNumbers:vals,reason:reason.value.trim()},"Keputusan seri tersimpan dan diaudit.");
+    submitAction("RESOLVE_TIE",{competition,
+     orderedStartNumbers:vals,reason:reason.value.trim()},
+     "Keputusan seri tersimpan dan diaudit.");
    };
    box.append(save);section.append(box);
   }
@@ -1106,7 +1202,7 @@ async function loadPublic(){
   const rows=(data.results||[]).map(p=>{
    const name=p.fullName?" — "+p.fullName+" ("+p.school+")":"";
    return node("div",{class:"rank-row"},[
-    node("div",null,[node("strong",null,[tf26RankLabel(p,false)+" • Nomor "+String(p.startNo).padStart(3,"0")]),node("div",{class:"small"},[p.pendingDeliberation?"Menunggu musyawarah juri":"Nilai lengkap"+name])]),
+    node("div",null,[node("strong",null,[tf26RankLabel(p,false)+" • Nomor "+String(p.startNo).padStart(3,"0")]),node("div",{class:"small"},[p.pendingDeliberation?"Menunggu musyawarah juri":p.sharedRank?"Peringkat bersama • Nilai lengkap":"Nilai lengkap"+name])]),
     node("div",{class:"num"},[p.meanScore.toFixed(2)])
    ]);
   });
