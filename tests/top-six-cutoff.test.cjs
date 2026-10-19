@@ -37,7 +37,7 @@ test("tie entirely below sixth is shared rank, never required deliberation",()=>
 });
 test("resolved boundary tie can determine sixth and seventh, while lower ties remain shared",()=>{
  const conf=make([top,a,b,c,d,e,e,below,below]);
- conf.tieDecisions=[{competition:"THF",scoreKey:"285:105:90:60:30",orderedStartNumbers:[7,6]}];
+ conf.tieDecisions=[{competition:"THF",scoreKey:"285:105:90:60:30",orderedStartNumbers:[7]}];
  const result=TF26Domain.rank(conf);
  assert.deepEqual(result.slice(5,7).map(x=>x.startNo),[7,6]);
  assert.deepEqual(result.slice(5,7).map(x=>x.rank),[6,7]);
