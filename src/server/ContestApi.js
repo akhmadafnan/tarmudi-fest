@@ -64,7 +64,13 @@ function apiPublic(competition){
   try{return {ok:true,data:tf26Service_().publicResults(competition)};}
   catch(err){return tf26Error_(err);}
 }
-function doGet(){
+function doGet(request){
+  if(request&&request.parameter&&request.parameter.view==="results"){
+    const branch=String(request.parameter.cabang||"").toUpperCase();
+    const payload=apiPublic(branch);
+    return ContentService.createTextOutput(JSON.stringify(payload))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   const props=tf26Properties_();
   const apiKey=props.getProperty("TF26_FIREBASE_API_KEY")||"";
   const domain=props.getProperty("TF26_INTERNAL_LOGIN_DOMAIN")||"";
