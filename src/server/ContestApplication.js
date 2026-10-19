@@ -283,6 +283,57 @@ class TF26Application {
       return {startNo:req.startNo,competition,status:req.final?"FINAL":"DRAFT",total};
     });
   }
+  /**
+   * Explicit correction of a previously FINAL score. Ordinary SAVE_SCORE
+   * remains immutable; this separate action requires a written reason,
+   * original-value optimistic guard and an immutable before/after journal.
+   */
+  correctFinalScore(actor,req){
+    this.assertActor_(actor,["juri"]);
+    if(!req||typeof req!=="object"||Array.isArray(req)||
+      !Number.isInteger(req.startNo)||req.startNo<1||req.startNo>9999||
+      !Array.isArray(req.points)||!Array.isArray(req.expectedPoints)||
+      typeof req.reason!=="string"||
+      req.reason.trim().length<15||req.reason.trim().length>400)
+      throw Error("INVALID_CORRECTION");
+    const competition=actor.competition;
+    return this.locked_(()=>{
+      const conf=this.setting_(competition);
+      if(conf.state!=="JUDGING_OPEN")throw Error("CORRECTION_CLOSED");
+      if(!this.assignedJudges_(competition).includes(actor.uid))throw Error("NOT_ASSIGNED");
+      if(!this.store_.checkins().some(c=>c.competition===competition&&c.startNo===req.startNo))
+        throw Error("NOT_CHECKED_IN");
+      const key=[competition,req.startNo,actor.uid,conf.version].join("::");
+      const original=this.store_.scores().find(s=>s.key===key&&s.judgeUid===actor.uid);
+      if(!original||original.status!=="FINAL")throw Error("SCORE_NOT_FINAL");
+      const oldTotal=TF26Domain.validatePoints(conf.criteria,original.points);
+      if(!Number.isInteger(original.total)||original.total!==oldTotal)
+        throw Error("SCORE_DATA_INVALID");
+      if(JSON.stringify(req.expectedPoints)!==JSON.stringify(original.points))
+        throw Error("SCORE_CHANGED_REFRESH");
+      const newTotal=TF26Domain.validatePoints(conf.criteria,req.points);
+      if(JSON.stringify(req.points)===JSON.stringify(original.points))
+        throw Error("NO_SCORE_CHANGE");
+      const now=this.stamp_();
+      // First preserve an immutable before/after snapshot. If the subsequent
+      // write fails, the journal remains PENDING for manual reconciliation.
+      const revisionRow=this.store_.appendScoreRevision({
+        competition,startNo:req.startNo,judgeUid:actor.uid,
+        schemeVersion:conf.version,oldPoints:original.points,oldTotal,
+        newPoints:req.points,newTotal,reason:req.reason.trim(),at:now
+      });
+      this.store_.saveScore({
+        key,competition,startNo:req.startNo,judgeUid:actor.uid,
+        version:conf.version,points:req.points,total:newTotal,status:"FINAL",at:now
+      },original);
+      this.store_.markScoreRevisionApplied(revisionRow);
+      this.store_.appendAudit(actor.uid,"CORRECT_FINAL_SCORE",
+        competition+"#"+req.startNo,
+        "v"+conf.version+";old="+oldTotal+";new="+newTotal+
+        ";reason_recorded;revision_row="+revisionRow,now);
+      return {competition,startNo:req.startNo,status:"FINAL",total:newTotal,corrected:true};
+    });
+  }
   publicResults(competition){
     if(!["MDG","THF","MWN"].includes(competition))throw Error("INVALID_REQUEST");
     const conf=this.setting_(competition);

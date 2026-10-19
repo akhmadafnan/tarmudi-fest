@@ -173,6 +173,21 @@ body{overflow-x:hidden}
  .jury-summary-item strong{font-size:22px}
 }
 
+/* Audited FINAL score correction; only visible for a judge's own score. */
+.jury-correction{margin-top:20px;border-top:2px dashed #202020;padding-top:16px}
+.jury-correction .jury-correct-trigger{min-height:46px}
+.jury-correct-form{padding:14px;border:2px solid #202020;border-radius:7px;background:#fff8e8;margin-top:12px}
+.jury-correct-form textarea{width:100%;min-height:92px;resize:vertical;
+  border:2px solid #202020;border-radius:5px;padding:11px;font:inherit;font-size:16px}
+.jury-correct-form textarea:focus-visible{outline:3px solid #2b8f70;outline-offset:2px}
+.jury-correct-actions{margin-top:13px}
+@media(max-width:700px){
+ .jury-correction .jury-correct-trigger{width:100%}
+ .jury-correct-form{padding:11px}
+ .jury-correct-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+ .jury-correct-actions button{width:100%;min-height:48px}
+}
+
 </style></head>
 <body><div class="shell">
 <header class="topbar"><div class="brand">TARMUDI <span>FEST</span> <strong>2026</strong></div><span class="tag">Kampus 2 • MIS Tarbiyatul Mubtadiin</span></header>
@@ -249,6 +264,12 @@ function describe(code){
   PRIVACY_APPROVAL_REQUIRED:"Publikasi identitas peserta anak belum disetujui penanggung jawab dan pengelola data.",
   NOT_CHECKED_IN:"Nomor tersebut belum check-in.",
   SCORE_LOCKED:"Nilai sudah FINAL dan terkunci.",
+  INVALID_CORRECTION:"Koreksi tidak valid. Alasan wajib 15–400 karakter dan semua poin harus benar.",
+  CORRECTION_CLOSED:"Koreksi ditolak karena penjurian cabang sudah ditutup.",
+  SCORE_NOT_FINAL:"Tidak ditemukan nilai FINAL milik akun Juri ini untuk nomor tersebut.",
+  SCORE_CHANGED_REFRESH:"Nilai telah berubah dari versi yang Anda buka. Muat ulang sebelum mengoreksi.",
+  NO_SCORE_CHANGE:"Nilai koreksi sama dengan nilai sebelumnya. Ubah setidaknya satu kriteria.",
+  SCORE_DATA_INVALID:"Nilai lama tidak konsisten. Hubungi Admin untuk pemeriksaan data.",
   JUDGING_NOT_OPEN:"Penjurian cabang ini belum dibuka Admin.",
   JUDGES_INCOMPLETE:"Jumlah juri aktif belum mencapai jumlah yang disahkan.",
   WRONG_PHASE:"Status cabang tidak memperbolehkan operasi ini.",
@@ -855,7 +876,7 @@ function drawJudgeIndex(root,entries){
     node("strong",{class:"jury-own-score"},[score===null?"—":score+" / 100"])
    ]);
    const action=node("button",{class:"small-btn jury-open "+(item.status==="FINAL"?"secondary":"green")},[
-    item.status==="FINAL"?"Lihat nilai":item.status==="DRAFT"?"Lanjutkan draft":"Buka penilaian"
+    item.status==="FINAL"?"Lihat / koreksi":item.status==="DRAFT"?"Lanjutkan draft":"Buka penilaian"
    ]);
    action.type="button";
    action.setAttribute("aria-label",item.status==="FINAL"?"Lihat nilai sendiri nomor "+start:"Buka formulir nomor "+start);
@@ -896,7 +917,7 @@ function drawJudgeDetail(root,entry){
  wrap.append(node("div",{class:"eyebrow"},[branches[DATA.competition]+" • Nomor start"]));
  wrap.append(node("h2",{class:"jury-detail-number"},["Nomor "+code]));
  wrap.append(node("p",{class:"small"},[
-  finalized?"Nilai FINAL sudah terkunci. Anda hanya dapat melihat nilai sendiri.":
+  finalized?"Nilai FINAL terkunci untuk perubahan biasa. Jika salah input, gunakan Koreksi Nilai dengan alasan tertulis selama penjurian masih terbuka.":
   DATA.phase!=="JUDGING_OPEN"?"Penjurian belum dibuka. Kolom penilaian belum dapat diubah.":
   "Isi poin berdasarkan kriteria. Simpan draft atau finalisasi setelah seluruh kriteria lengkap."
  ]));
@@ -955,6 +976,65 @@ function drawJudgeDetail(root,entry){
   actions.append(button);
  }
  wrap.append(actions);
+ if(finalized){
+  const available=DATA.phase==="JUDGING_OPEN";
+  const area=node("section",{class:"jury-correction"},[]);
+  const trigger=node("button",{class:"secondary jury-correct-trigger"},["Koreksi nilai"]);
+  trigger.type="button";trigger.disabled=!available;
+  area.append(trigger);
+  const note=node("p",{class:"small"},[
+   available?"Koreksi hanya untuk nilai Anda sendiri. Perubahan membutuhkan alasan dan tercatat di riwayat audit.":
+   "Koreksi tidak tersedia setelah penjurian ditutup. Hubungi Admin jika membutuhkan penanganan resmi."
+  ]);
+  area.append(note);
+  const editing=node("div",{class:"hidden jury-correct-form"},[]);
+  const reasonLabel=node("label",null,["Alasan koreksi (wajib, minimal 15 karakter)"]);
+  const reason=node("textarea",{placeholder:"Contoh: Ada salah input pada kriteria Tajwid saat finalisasi."});
+  reason.rows=3;reason.maxLength=400;reason.setAttribute("aria-label","Alasan koreksi nilai FINAL");
+  editing.append(reasonLabel,reason);
+  const update=node("button",{class:"green"},["Simpan koreksi FINAL"]);
+  const cancel=node("button",{class:"secondary"},["Batalkan koreksi"]);
+  cancel.type="button";update.type="button";
+  const buttons=node("div",{class:"controls jury-correct-actions"},[cancel,update]);
+  editing.append(buttons);area.append(editing);
+  trigger.onclick=()=>{
+   if(!available)return;
+   inputs.forEach(input=>{input.disabled=false;});
+   trigger.classList.add("hidden");
+   editing.classList.remove("hidden");
+   refresh();
+   if(inputs[0])inputs[0].focus();
+  };
+  cancel.onclick=()=>{
+   inputs.forEach((input,i)=>{
+    input.value=String(entry.ownPoints[i]);
+    input.disabled=true;
+   });
+   reason.value="";
+   editing.classList.add("hidden");trigger.classList.remove("hidden");
+   refresh();
+  };
+  update.onclick=async()=>{
+   const values=points();
+   const explanation=reason.value.trim();
+   if(!valid(values,true)){msg("Isi semua poin dengan bilangan bulat sesuai batas kriteria.",true);return;}
+   if(explanation.length<15||explanation.length>400){
+    msg("Tuliskan alasan koreksi yang jelas (15–400 karakter).",true);return;
+   }
+   if(values.every((v,i)=>v===entry.ownPoints[i])){
+    msg("Ubah minimal satu poin. Tidak ada perubahan yang perlu dicatat.",true);return;
+   }
+   if(!confirm("Simpan KOREKSI FINAL nomor "+code+"? Nilai sebelumnya dan alasan koreksi akan dicatat di riwayat. Lanjut?"))return;
+   const saved=await submitAction("CORRECT_FINAL_SCORE",{
+     startNo:entry.startNo,points:values,expectedPoints:entry.ownPoints.slice(),reason:explanation
+   },"Koreksi nilai FINAL tersimpan dan dicatat dalam audit.");
+   if(saved){
+     JUDGE_SELECTED_NUMBER=null;
+     if(DATA&&DATA.role==="juri")drawWorkspace();
+   }
+  };
+  wrap.append(area);
+ }
  render(root,[wrap]);
 }
 function tabs(){

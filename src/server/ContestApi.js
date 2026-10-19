@@ -33,7 +33,8 @@ function tf26Error_(error){
   // A bounded set of user-actionable errors; never reveal internal system
   // exception details, raw token, Firebase config, participant identity.
   const allowed=[
-    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","ACCOUNT_EXISTS","ACCOUNT_LIMIT","JUDGES_FULL","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
+    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","INVALID_CORRECTION","CORRECTION_CLOSED","SCORE_NOT_FINAL",
+    "SCORE_CHANGED_REFRESH","NO_SCORE_CHANGE","SCORE_DATA_INVALID","ACCOUNT_EXISTS","ACCOUNT_LIMIT","JUDGES_FULL","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","INCOMPLETE_SCORES","TIE_RESOLUTION_REQUIRED","INVALID_TIE_DECISION","TIE_ALREADY_DECIDED","PRIVACY_APPROVAL_REQUIRED","NOT_VERIFIED",
     "INVALID_POINTS","NOT_CHECKED_IN","SCORE_LOCKED","JUDGING_NOT_OPEN",
     "JUDGES_INCOMPLETE","WRONG_PHASE","BUSY_RETRY","DATABASE_NOT_READY"
   ];
@@ -114,6 +115,10 @@ function apiCommand(idToken,operation,payload){
     else if(operation==="RESOLVE_TIE")result=app.resolveTie(actor,payload);
     else if(operation==="SAVE_SCORE")result=app.score(actor,{
       startNo:payload.startNo,points:payload.points,final:payload.final
+    });
+    else if(operation==="CORRECT_FINAL_SCORE")result=app.correctFinalScore(actor,{
+      startNo:payload.startNo,points:payload.points,
+      expectedPoints:payload.expectedPoints,reason:payload.reason
     });
     else throw Error("NOT_ALLOWED");
     return {ok:true,data:result};

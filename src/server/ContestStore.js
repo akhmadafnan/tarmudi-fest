@@ -6,7 +6,7 @@
 class TF26SheetStore {
   constructor(book){this.book_=book;}
   sheet_(name){
-    if(!["PESERTA_IMPORT","CHECKINS","SCORES","SETTINGS","AUDIT","TIE_RESOLUTIONS"].includes(name))throw Error("BAD_TAB");
+    if(!["PESERTA_IMPORT","CHECKINS","SCORES","SCORE_REVISIONS","SETTINGS","AUDIT","TIE_RESOLUTIONS"].includes(name))throw Error("BAD_TAB");
     const sh=this.book_.getSheetByName(name);
     if(!sh)throw Error("DATABASE_NOT_INITIALIZED");
     return sh;
@@ -106,6 +106,18 @@ class TF26SheetStore {
     const sh=this.sheet_("SCORES");
     if(existing&&existing.rowNumber)sh.getRange(existing.rowNumber,1,1,cells.length).setValues([cells]);
     else sh.appendRow(cells);
+  }
+  appendScoreRevision(value){
+    // Private immutable audit journal. Does not include participant identities.
+    const sheet=this.sheet_("SCORE_REVISIONS");
+    sheet.appendRow([value.at,value.competition,value.startNo,value.judgeUid,
+      value.schemeVersion,JSON.stringify(value.oldPoints),value.oldTotal,
+      JSON.stringify(value.newPoints),value.newTotal,value.reason,"PENDING"]);
+    return sheet.getLastRow();
+  }
+  markScoreRevisionApplied(row){
+    if(!Number.isInteger(row)||row<2)throw Error("INVALID_CORRECTION");
+    this.sheet_("SCORE_REVISIONS").getRange(row,11).setValue("APPLIED");
   }
   setPhase(setting,state){
     this.sheet_("SETTINGS").getRange(setting.rowNumber,4).setValue(state);
