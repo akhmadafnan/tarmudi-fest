@@ -56,6 +56,8 @@ test("jury deliberation requires deliberate manual ordering rather than a sugges
  assert.match(admin,/submitAction\("RESOLVE_TIE"/);
 });
 test("domain leaves truly unresolved tied ranking with a null rank and an explicit flag",()=>{
- assert.match(domain,/rank:isUnresolved\?null:position\+i,pendingDeliberation:isUnresolved/);
+ assert.match(domain,/rank:requiresDeliberation\?null:isSharedRank\?position:position\+i/);
+ assert.match(domain,/pendingDeliberation:requiresDeliberation,sharedRank:isSharedRank/);
+ assert.match(domain,/const requiresDeliberation=isUnresolved&&position<=6/);
  assert.match(domain,/const isUnresolved=members\.length>1&&!ordered/);
 });
