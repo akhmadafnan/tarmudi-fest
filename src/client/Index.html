@@ -206,6 +206,7 @@ const CFG=<?!= publicConfig ?>;
 let TOKEN=null,IDENTITY=null,DATA=null,PUBLIC=false,BRANCH="THF",FILTER="";
 let REGISTRATION_BRANCH_FILTER="ALL";
 let NEW_CREDENTIALS=[];
+let TF26_TEST_JURY_CREDS=[];
 let JUDGE_SELECTED_NUMBER=null,JUDGE_SEARCH="",JUDGE_FILTER="ALL";
 const $=id=>document.getElementById(id);
 function text(value){return document.createTextNode(String(value===null||value===undefined?"":value));}
@@ -328,8 +329,9 @@ function drawAdmin(root){
  const importer=drawImporter();
  const standings=drawAdminStandings();
  const accounts=drawAccountProvisioner();
+ const uatJudges=drawUatTahfidzJudges();
  const entries=drawRegistration(null,true);
- render(root,[head,stats,accounts,standings,importer,entries]);
+ render(root,[head,stats,uatJudges,accounts,standings,importer,entries]);
 }
 const TF26_PLANNED_USERS=[
  {username:"reg-mdg",role:"registrasi",competition:"MDG"},
@@ -415,6 +417,95 @@ function drawAccountProvisioner(){
  };
  root.append(node("div",{class:"controls"},[generate,exportBtn]));
  if(NEW_CREDENTIALS.length)showCredentials();
+ return root;
+}
+// Test-only: Admin can provision exactly two missing Tahfidz judge identities.
+// Firebase creates passwords; GAS independently verifies signed tokens + fixed role.
+function drawUatTahfidzJudges(){
+ const thf=(DATA.config||[]).find(x=>x.competition==="THF");
+ const count=thf?thf.assignedJudgeCount:0;
+ const root=node("section",{class:"panel"},[
+  node("h2",null,["UAT • Lengkapi Juri Tahfidz"]),
+  node("p",{class:"small"},["Siapkan hanya akun juri uji kedua dan ketiga. Password dibuat acak, disimpan sementara pada browser Admin, dan harus diunduh sebagai CSV privat."])
+ ]);
+ const note=node("p",{class:"small"},["Juri aktif: "+count+" / 3"]);
+ root.append(note);
+ const create=node("button",{class:"green"},["Buat dua juri uji Tahfidz"]);
+ create.disabled=count!==1||!CFG.apiKey;
+ const download=node("button",{class:"secondary"},["Unduh kredensial uji (privat)"]);
+ download.disabled=!TF26_TEST_JURY_CREDS.some(x=>x.linked);
+ const status=node("div",{class:"small"},[]);
+ root.append(node("div",{class:"controls"},[create,download]),status);
+ const rows=node("div",{class:"results"},[]);
+ root.append(rows);
+ function paint(){
+  render(rows,TF26_TEST_JURY_CREDS.map(x=>
+   node("div",{class:"participant"},[
+    node("strong",null,[x.username]),
+    node("span",{class:"small"},[x.linked?"Juri Tahfidz • UID terverifikasi":"Akun dibuat, pengaitan belum selesai"])
+   ])
+  ));
+  download.disabled=!TF26_TEST_JURY_CREDS.some(x=>x.linked);
+ }
+ download.onclick=()=>{
+  const items=TF26_TEST_JURY_CREDS.filter(x=>x.linked);
+  if(!items.length)return;
+  const quote=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const csv=["username,email,password,cabang",...items.map(x=>
+   [x.username,x.email,x.password,"THF"].map(quote).join(","))].join("\r\n");
+  const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+  const uri=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=uri;a.download="TF26-UAT-Juri-Tahfidz-PRIVAT.csv";
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(uri),1500);
+ };
+ create.onclick=async()=>{
+  if(!TOKEN||DATA.role!=="admin")return;
+  if(!confirm("Buat 2 akun Juri Tahfidz simulasi? Simpan CSV password secara privat sebelum keluar atau refresh."))return;
+  create.disabled=true;busy(true);
+  let complete=0;
+  try{
+   for(const username of ["juri-thf-02","juri-thf-03"]){
+    let saved=TF26_TEST_JURY_CREDS.find(x=>x.username===username);
+    if(saved&&saved.linked){complete++;continue;}
+    status.textContent="Memproses "+username+"...";
+    let signedToken;
+    if(!saved){
+     if(!window.crypto||!crypto.getRandomValues)throw Error("Generator password aman tidak tersedia.");
+     const bytes=new Uint8Array(36);
+     crypto.getRandomValues(bytes);
+     const password=btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+     const email=username+"@accounts.tarmudifest.test";
+     const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+encodeURIComponent(CFG.apiKey),{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password,returnSecureToken:true})
+     });
+     const json=await r.json();
+     if(!r.ok||!json.idToken)throw Error("Gagal membuat akun "+username+".");
+     saved={username,email,password,linked:false};
+     TF26_TEST_JURY_CREDS.push(saved);
+     signedToken=json.idToken;
+    }else{
+     // Retries do not create duplicate Firebase users.
+     const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+encodeURIComponent(CFG.apiKey),{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email:saved.email,password:saved.password,returnSecureToken:true})
+     });
+     const json=await r.json();
+     if(!r.ok||!json.idToken)throw Error("Login ulang akun uji gagal.");
+     signedToken=json.idToken;
+    }
+    const grant=await call("apiProvisionAccount",[TOKEN,username,signedToken]);
+    if(!grant||grant.ok!==true)throw Error("Akun sudah dibuat, tetapi server menolak penugasan: "+(grant&&grant.error||"REQUEST_FAILED"));
+    if(grant.data.role!=="juri"||grant.data.competition!=="THF")throw Error("Role juri tidak sesuai; UAT dihentikan.");
+    saved.linked=true;complete++;paint();
+   }
+   status.textContent="Dua juri uji siap. Unduh CSV password privat. Refresh panel untuk melihat juri aktif 3/3.";
+   msg("Dua akun juri uji berhasil diberikan izin Tahfidz. Simpan CSV sebelum keluar.");
+  }catch(e){status.textContent=String(e.message||"Koneksi gagal")+"; klik kembali untuk melanjutkan bila diperlukan.";paint();}
+  finally{busy(false);create.disabled=count!==1;}
+ };
+ paint();
  return root;
 }
 function parseCsvStrict(raw){
