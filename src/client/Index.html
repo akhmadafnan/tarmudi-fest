@@ -147,6 +147,7 @@ body{overflow-x:hidden}
 "use strict";
 const CFG=<?!= publicConfig ?>;
 let TOKEN=null,IDENTITY=null,DATA=null,PUBLIC=false,BRANCH="THF",FILTER="";
+let REGISTRATION_BRANCH_FILTER="ALL";
 let NEW_CREDENTIALS=[];
 const $=id=>document.getElementById(id);
 function text(value){return document.createTextNode(String(value===null||value===undefined?"":value));}
@@ -534,7 +535,7 @@ function drawRegistration(root,asAdmin){
  input.setAttribute("autocomplete","off");input.setAttribute("aria-label","Cari peserta berdasarkan nama, sekolah, atau ID");
  input.value=FILTER;
  search.append(label,input);wrap.append(search);
- let currentBranch="ALL";
+ let currentBranch=asAdmin?REGISTRATION_BRANCH_FILTER:"ALL";
  const filters=node("div",{class:"chips registration-filters"},[]);
  filters.setAttribute("role","group");filters.setAttribute("aria-label","Filter cabang lomba");
  function refreshFilters(){
@@ -549,7 +550,7 @@ function drawRegistration(root,asAdmin){
   for(const [code,name] of options){
    const btn=node("button",{class:"chip"},[name]);
    btn.type="button";btn.dataset.branch=code;
-   btn.onclick=()=>{currentBranch=code;refreshFilters();displayRows();};
+   btn.onclick=()=>{currentBranch=code;REGISTRATION_BRANCH_FILTER=code;refreshFilters();displayRows();};
    filters.append(btn);
   }
   wrap.append(filters);refreshFilters();
@@ -697,7 +698,7 @@ $("login-form").onsubmit=async(e)=>{
  }catch(e){TOKEN=null;showLogin();msg("Username atau password tidak valid / tidak memiliki izin.",true)}
  finally{busy(false)}
 };
-$("logout").onclick=()=>{TOKEN=null;IDENTITY=null;DATA=null;$("password").value="";showLogin();msg("Anda berhasil keluar.");};
+$("logout").onclick=()=>{TOKEN=null;IDENTITY=null;DATA=null;FILTER="";REGISTRATION_BRANCH_FILTER="ALL";$("password").value="";showLogin();msg("Anda berhasil keluar.");};
 $("refresh").onclick=dashboard;
 $("view-public").onclick=publicView;
 $("back-admin").onclick=dashboard;
