@@ -1,10 +1,11 @@
 "use strict";
 /** TF26 application use cases. Client-provided role/competition has no authority. */
 class TF26Application {
-  constructor(store,locks,clock,assignments,approvedTwoJudgeBranches){
+  constructor(store,locks,clock,assignments,approvedTwoJudgeBranches,privacyReleaseApproved){
     this.store_=store;this.locks_=locks;this.clock_=clock;
     this.assignments_=assignments||{};
     this.approvedTwoJudgeBranches_=approvedTwoJudgeBranches||[];
+    this.privacyReleaseApproved_=privacyReleaseApproved===true;
   }
   stamp_(){return this.clock_();}
   assertActor_(actor,roles){
@@ -56,7 +57,16 @@ class TF26Application {
       assignedJudgeCount:this.assignedJudges_(s.competition).length,version:s.version,criteria:s.criteria,
       publication:s.publication,privacyApproved:s.privacyApproved
     }));
-    return {role:"admin",competition:"ALL",config:confs,participants:this.participantsAndAttendance_(null)};
+    const privateStandings=confs.map(s=>{
+      const safe=this.publicResults(s.competition);
+      const participants=this.participantsAndAttendance_(s.competition);
+      return {competition:s.competition,items:safe.results.map(r=>{
+        const p=participants.find(x=>x.startNo===r.startNo);
+        return {...r,fullName:p?p.fullName:"",school:p?p.school:""};
+      })};
+    });
+    return {role:"admin",competition:"ALL",config:confs,
+      participants:this.participantsAndAttendance_(null),privateStandings};
   }
   locked_(handler){
     const lock=this.locks_.getScriptLock();
@@ -159,6 +169,41 @@ class TF26Application {
       this.store_.setPhase(conf,"JUDGING_OPEN");
       this.store_.appendAudit(actor.uid,"OPEN_JUDGING",competition,"v"+conf.version,this.stamp_());
       return {competition,state:"JUDGING_OPEN"};
+    });
+  }
+  closeJudging(actor,competition){
+    this.assertActor_(actor,["admin"]);
+    if(!["MDG","THF","MWN"].includes(competition))throw Error("INVALID_REQUEST");
+    return this.locked_(()=>{
+      const conf=this.setting_(competition);
+      if(conf.state!=="JUDGING_OPEN")throw Error("WRONG_PHASE");
+      const attendance=this.store_.checkins().filter(x=>x.competition===competition);
+      const results=this.publicResults(competition).results;
+      if(attendance.length<6||results.length!==attendance.length)
+        throw Error("INCOMPLETE_SCORES");
+      this.store_.setPhase(conf,"REVIEW");
+      this.store_.appendAudit(actor.uid,"CLOSE_JUDGING",competition,
+        "completed="+results.length,this.stamp_());
+      return {competition,state:"REVIEW",completed:results.length};
+    });
+  }
+  publishOfficial(actor,competition){
+    this.assertActor_(actor,["admin"]);
+    if(!["MDG","THF","MWN"].includes(competition))throw Error("INVALID_REQUEST");
+    if(!this.privacyReleaseApproved_)throw Error("PRIVACY_APPROVAL_REQUIRED");
+    return this.locked_(()=>{
+      const conf=this.setting_(competition);
+      if(conf.state!=="REVIEW")throw Error("WRONG_PHASE");
+      const count=this.store_.checkins().filter(x=>x.competition===competition).length;
+      const results=this.publicResults(competition).results;
+      if(results.length!==count||count<6)throw Error("INCOMPLETE_SCORES");
+      if(results.slice(0,6).some(x=>x.pendingDeliberation||x.rank===null))
+        throw Error("TIE_RESOLUTION_REQUIRED");
+      const now=this.stamp_();
+      this.store_.markOfficial(conf,actor.uid,now);
+      this.store_.appendAudit(actor.uid,"PUBLISH_OFFICIAL",competition,
+        "winners=6;privacyGate=owner-approved",now);
+      return {competition,state:"OFFICIAL",publishedAt:now,winners:6};
     });
   }
   score(actor,req){

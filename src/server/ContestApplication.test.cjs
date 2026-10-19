@@ -21,6 +21,7 @@ function app(){
   participants:()=>data.participants,checkins:()=>data.checkins,scores:()=>data.scores,settings:()=>data.settings,
   appendCheckin:x=>data.checkins.push(x),
   updateScheme:(old,criteria,count,v)=>{old.criteria=criteria;old.requiredJudges=count;old.version=v;},
+  markOfficial:(conf,uid,at)=>{conf.state="OFFICIAL";conf.publication="OFFICIAL";conf.privacyApproved=true;conf.approvedBy=uid;conf.approvedAt=at;},
   replaceParticipants:x=>{data.participants=x.map(p=>({id:p.id,fullName:p.fullName,school:p.school,competition:p.competition,verified:p.status==="TERVERIFIKASI"}));return "BACKUP_TEST";},
   saveScore:(x,old)=>{if(old){Object.assign(old,x)}else data.scores.push({...x})},
   setPhase:(s,v)=>{s.state=v},
@@ -149,4 +150,17 @@ test("Cannot change scoring scheme after judging begins",()=>{
  const s=app();s.service.setJudgingOpen(admin,"THF");
  assert.throws(()=>s.service.updateScheme(admin,{competition:"THF",requiredJudges:3,
   criteria:[["A",50],["B",50]]}),/WRONG_PHASE/);
+});
+
+test("Cannot close judging while any checked-in participant lacks all scores",()=>{
+ const s=app();s.service.checkIn(admin,"TF26-THF-001");s.service.setJudgingOpen(admin,"THF");
+ assert.throws(()=>s.service.closeJudging(admin,"THF"),/INCOMPLETE_SCORES/);
+});
+test("Official publication requires explicit owner privacy authorization",()=>{
+ const s=app();s.data.settings[0].state="REVIEW";
+ assert.throws(()=>s.service.publishOfficial(admin,"THF"),/PRIVACY_APPROVAL_REQUIRED/);
+});
+test("Registrar/judge never allowed to close or publish results",()=>{
+ const s=app();assert.throws(()=>s.service.closeJudging(judge,"THF"),/NOT_ALLOWED/);
+ assert.throws(()=>s.service.publishOfficial(registrar,"MDG"),/NOT_ALLOWED/);
 });

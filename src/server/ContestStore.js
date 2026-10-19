@@ -73,6 +73,16 @@ class TF26SheetStore {
     this.sheet_("SETTINGS").getRange(old.rowNumber,5,1,2)
       .setValues([[newVersion,JSON.stringify(criteria)]]);
   }
+  markOfficial(conf,actorUid,now){
+    const sh=this.sheet_("SETTINGS");
+    // Identity projection only opens if BOTH publication and privacy flags
+    // are set. Publication is written LAST to fail closed on partial error.
+    sh.getRange(conf.rowNumber,8).setValue("TRUE");
+    sh.getRange(conf.rowNumber,9,1,2).setValues([[actorUid,now]]);
+    sh.getRange(conf.rowNumber,4).setValue("OFFICIAL");
+    sh.getRange(conf.rowNumber,7).setValue("OFFICIAL");
+    SpreadsheetApp.flush();
+  }
   appendCheckin(value){
     this.sheet_("CHECKINS").appendRow([value.participantId,value.competition,
       value.startNo,value.at,value.actorUid]);

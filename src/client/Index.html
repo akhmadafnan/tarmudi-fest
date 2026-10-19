@@ -103,6 +103,9 @@ function describe(code){
   INVALID_CONFIGURATION:"Pengaturan cabang atau jumlah juri tidak valid.",
   POLICY_ADDENDUM_REQUIRED:"Dua juri untuk cabang ini membutuhkan addendum juknis resmi yang disahkan panitia terlebih dahulu.",
   IMPORT_LOCKED:"Impor penggantian ditolak: check-in atau penjurian sudah dimulai. Data lama tidak dihapus.",
+  INCOMPLETE_SCORES:"Belum semua peserta check-in dinilai FINAL oleh seluruh juri wajib (minimal enam peserta).",
+  TIE_RESOLUTION_REQUIRED:"Ada posisi juara seri. Musyawarah dan keputusan tertulis wajib diselesaikan sebelum publikasi.",
+  PRIVACY_APPROVAL_REQUIRED:"Publikasi identitas peserta anak belum disetujui penanggung jawab dan pengelola data.",
   NOT_CHECKED_IN:"Nomor tersebut belum check-in.",
   SCORE_LOCKED:"Nilai sudah FINAL dan terkunci.",
   JUDGING_NOT_OPEN:"Penjurian cabang ini belum dibuka Admin.",
@@ -169,11 +172,21 @@ function drawAdmin(root){
    if(!editor.classList.contains("hidden"))drawSchemeEditor(editor,c);
   };
   content.append(configure,editor);
+  const close=node("button",{class:"small-btn secondary"},["Tutup penjurian"]);
+  close.disabled=c.phase!=="JUDGING_OPEN";
+  close.onclick=()=>{if(confirm("Tutup penjurian "+c.label+"? Semua juri wajib sudah FINAL?"))
+    submitAction("CLOSE_JUDGING",{competition:c.competition},"Penjurian ditutup; pemeriksaan hasil dapat dilanjutkan.");};
+  const official=node("button",{class:"small-btn green"},["Sahkan & publikasikan"]);
+  official.disabled=c.phase!=="REVIEW";
+  official.onclick=()=>{if(confirm("Terbitkan hasil RESMI "+c.label+" beserta identitas peserta? Lanjut hanya jika persetujuan wali, penanggung jawab, dan keputusan seri sudah lengkap."))
+    submitAction("PUBLISH_OFFICIAL",{competition:c.competition},"Hasil RESMI berhasil diterbitkan.");};
+  content.append(node("div",{class:"controls"},[close,official]));
   return content;
  }));
  const importer=drawImporter();
+ const standings=drawAdminStandings();
  const entries=drawRegistration(null,true);
- render(root,[head,stats,importer,entries]);
+ render(root,[head,stats,standings,importer,entries]);
 }
 function parseCsvStrict(raw){
  const s=String(raw||"").replace(/^\uFEFF/,"");
@@ -267,6 +280,26 @@ function drawSchemeEditor(root,conf){
  };
  card.append(button);
  render(root,[card]);
+}
+function drawAdminStandings(){
+ const section=node("section",{class:"panel"},[
+  node("h2",null,["Rekap hasil internal Admin"]),
+  node("p",{class:"small"},["Data berikut hanya untuk Admin. Publik tetap melihat nomor-only sampai pengesahan resmi."])
+ ]);
+ for(const group of (DATA.privateStandings||[])){
+  section.append(node("h3",null,[branches[group.competition]]));
+  const list=node("div",{class:"results"},group.items.map(r=>{
+   const label=r.rank===null?"Perlu musyawarah":"#"+r.rank;
+   return node("div",{class:"rank-row"},[
+    node("div",null,[node("strong",null,[label+" • Nomor "+String(r.startNo).padStart(3,"0")]),
+      node("div",{class:"small"},[r.fullName+" — "+r.school])]),
+    node("div",{class:"num"},[r.meanScore.toFixed(2)])
+   ]);
+  }));
+  if(!group.items.length)list.append(node("p",{class:"small"},["Belum ada hasil lengkap seluruh juri wajib."]));
+  section.append(list);
+ }
+ return section;
 }
 function drawRegistration(root,asAdmin){
  const wrap=node("section",{class:"panel"},[]);
