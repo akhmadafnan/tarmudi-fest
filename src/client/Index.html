@@ -923,7 +923,7 @@ $("login-form").onsubmit=async(e)=>{
  }catch(e){TOKEN=null;showLogin();msg("Username atau password tidak valid / tidak memiliki izin.",true)}
  finally{busy(false)}
 };
-$("logout").onclick=()=>{TOKEN=null;IDENTITY=null;DATA=null;FILTER="";REGISTRATION_BRANCH_FILTER="ALL";$("password").value="";showLogin();msg("Anda berhasil keluar.");};
+$("logout").onclick=()=>{TOKEN=null;IDENTITY=null;DATA=null;FILTER="";REGISTRATION_BRANCH_FILTER="ALL";JUDGE_SELECTED_NUMBER=null;JUDGE_SEARCH="";JUDGE_FILTER="ALL";$("password").value="";showLogin();msg("Anda berhasil keluar.");};
 $("refresh").onclick=dashboard;
 $("view-public").onclick=publicView;
 $("back-admin").onclick=dashboard;
