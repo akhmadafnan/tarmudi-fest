@@ -67,3 +67,17 @@
 - `tests/uat-review-publication-gates.test.cjs`
 - `tests/top-six-cutoff.test.cjs`
 - `docs/architecture/ADR-0005-top-six-tie-deliberation.md`
+
+## Pembaruan pemeriksaan langsung dan penyelesaian UAT malam hari
+
+Pada 19 Oktober 2026 malam, baseline sesi Firebase diperkuat: token ID yang mendekati kedaluwarsa dapat diperbarui menggunakan refresh token yang hanya disimpan dalam memori browser. Verifikasi programatis mencakup refresh serentak, refresh gagal, logout, anti-replay setelah logout, dan satu kali retry bila backend secara eksplisit mengembalikan AUTH_REQUIRED. **11/11** tes khusus PASS, pengamatan sesi >1 jam pada HP tetap menjadi gate lapangan.
+
+**Hasil rilis:** 171/171 regresi PASS; Google Apps Script UAT menggunakan deployment lama yang diperbarui sampai **@24**, bukan URL baru. Pengujian GET live sesudah deployment menjawab `ok=true`, cabang THF, fase `INTERIM`, empat hasil, dua kelompok pending deliberation, dan **tidak ada nama ataupun sekolah** dalam keluaran publik. Tidak ada perubahan pada nilai, penomoran, atau pengesahan data yang aktif.
+
+**Backup:** satu salinan penuh private seluruh Google Sheets UAT berhasil dibuat; metadata Google Drive menunjukkan `shared=false` dan izin `user:owner` saja.
+
+**Template data baru:** delapan tab sesuai adapter GAS, semua sheet memiliki header dan konfigurasi fase READY/ANONYMOUS, tiga juri per cabang, skema 100 poin. 0 peserta/check-in/skor; metadata Google Drive menunjukkan hanya izin `user:owner`. **Belum ditautkan** ke aplikasi atau mengganti Script Properties.
+
+**Perubahan kode dan dokumentasi:** README lama yang menyatakan repository belum mempunyai aplikasi telah diganti dengan status UAT aktual. Panduan simulasi, laporan kesiapan, dan templat berita acara minimum telah ditambahkan dalam docs/operations.
+
+**Keputusan setelah pembaruan:** GO untuk simulasi dan demonstrasi petugas malam ini. GO-LIVE nyata menunggu persetujuan operator/panitia atas cutover data, autentikasi semua 13 akun, tes HP/jaringan lokasi, persetujuan privasi anak, serta berita acara final. Tidak ada publikasi hasil resmi.
