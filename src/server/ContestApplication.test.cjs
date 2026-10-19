@@ -20,6 +20,7 @@ function app(){
  const repo={
   participants:()=>data.participants,checkins:()=>data.checkins,scores:()=>data.scores,settings:()=>data.settings,
   appendCheckin:x=>data.checkins.push(x),
+  updateScheme:(old,criteria,count,v)=>{old.criteria=criteria;old.requiredJudges=count;old.version=v;},
   replaceParticipants:x=>{data.participants=x.map(p=>({id:p.id,fullName:p.fullName,school:p.school,competition:p.competition,verified:p.status==="TERVERIFIKASI"}));return "BACKUP_TEST";},
   saveScore:(x,old)=>{if(old){Object.assign(old,x)}else data.scores.push({...x})},
   setPhase:(s,v)=>{s.state=v},
@@ -119,4 +120,33 @@ test("Reject dangerous invalid input, invalid statuses and oversized files",()=>
  const invalid=[{...importRows()[0],status:"SOME_UNKNOWN_STATUS"}];
  assert.equal(s.service.previewImport(admin,invalid).canCommit,false);
  assert.throws(()=>s.service.previewImport(admin,Array(501).fill(importRows()[0])),/INVALID_IMPORT/);
+});
+
+test("Admin may publish versioned 100-point scoring scheme before judging",()=>{
+ const s=app();const out=s.service.updateScheme(admin,{
+  competition:"THF",requiredJudges:3,
+  criteria:[["Kelancaran",40],["Tajwid",30],["Fashohah",20],["Irama",10]]
+ });
+ assert.equal(out.version,2);assert.equal(s.data.settings[0].version,2);
+ assert.equal(s.data.logs.length,1);
+});
+test("Invalid total and non-admin config changes rejected",()=>{
+ const s=app();
+ assert.throws(()=>s.service.updateScheme(judge,{competition:"THF",requiredJudges:3,
+  criteria:[["A",50],["B",50]]}),/NOT_ALLOWED/);
+ assert.throws(()=>s.service.updateScheme(admin,{competition:"THF",requiredJudges:3,
+  criteria:[["A",50],["B",49]]}),/SCHEME_NOT_100/);
+});
+test("Two jurors on Tahfidz/Mendongeng require signed addendum gate",()=>{
+ const s=app();
+ assert.throws(()=>s.service.updateScheme(admin,{competition:"THF",requiredJudges:2,
+  criteria:[["A",50],["B",50]]}),/POLICY_ADDENDUM_REQUIRED/);
+ s.service.approvedTwoJudgeBranches_.push("THF");
+ assert.equal(s.service.updateScheme(admin,{competition:"THF",requiredJudges:2,
+  criteria:[["A",50],["B",50]]}).requiredJudges,2);
+});
+test("Cannot change scoring scheme after judging begins",()=>{
+ const s=app();s.service.setJudgingOpen(admin,"THF");
+ assert.throws(()=>s.service.updateScheme(admin,{competition:"THF",requiredJudges:3,
+  criteria:[["A",50],["B",50]]}),/WRONG_PHASE/);
 });

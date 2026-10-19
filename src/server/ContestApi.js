@@ -22,14 +22,17 @@ function tf26Service_(){
   try{roles=JSON.parse(props.getProperty("TF26_AUTH_ALLOWLIST_JSON")||"{}")}
   catch(_){throw Error("INVALID_CONFIGURATION")}
   if(!roles||typeof roles!=="object"||Array.isArray(roles))throw Error("INVALID_CONFIGURATION");
+  const allowedReduced=String(props.getProperty("TF26_ALLOW_TWO_JUDGE_BRANCHES")||"")
+    .split(",").map(x=>x.trim().toUpperCase()).filter(Boolean);
   return new TF26Application(new TF26SheetStore(book),LockService,
-    ()=>Utilities.formatDate(new Date(),"Asia/Jakarta","yyyy-MM-dd'T'HH:mm:ssXXX"),roles);
+    ()=>Utilities.formatDate(new Date(),"Asia/Jakarta","yyyy-MM-dd'T'HH:mm:ssXXX"),
+    roles,allowedReduced);
 }
 function tf26Error_(error){
   // A bounded set of user-actionable errors; never reveal internal system
   // exception details, raw token, Firebase config, participant identity.
   const allowed=[
-    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","INVALID_IMPORT","IMPORT_LOCKED","NOT_VERIFIED",
+    "AUTH_REQUIRED","NOT_ALLOWED","INVALID_REQUEST","INVALID_IMPORT","IMPORT_LOCKED","INVALID_SCHEME","INVALID_CONFIGURATION","POLICY_ADDENDUM_REQUIRED","NOT_VERIFIED",
     "INVALID_POINTS","NOT_CHECKED_IN","SCORE_LOCKED","JUDGING_NOT_OPEN",
     "JUDGES_INCOMPLETE","WRONG_PHASE","BUSY_RETRY","DATABASE_NOT_READY"
   ];
@@ -53,6 +56,7 @@ function apiCommand(idToken,operation,payload){
     else if(operation==="COMMIT_IMPORT")result=app.commitImport(actor,payload.rows);
     else if(operation==="CHECK_IN")result=app.checkIn(actor,payload.id);
     else if(operation==="OPEN_JUDGING")result=app.setJudgingOpen(actor,payload.competition);
+    else if(operation==="UPDATE_SCHEME")result=app.updateScheme(actor,payload);
     else if(operation==="SAVE_SCORE")result=app.score(actor,{
       startNo:payload.startNo,points:payload.points,final:payload.final
     });

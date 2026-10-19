@@ -66,6 +66,13 @@ class TF26SheetStore {
     SpreadsheetApp.flush();
     return name;
   }
+  updateScheme(old,criteria,judgeCount,newVersion,actorUid,now){
+    this.sheet_("SCHEME_HISTORY").appendRow([now,old.competition,old.version,
+      JSON.stringify(old.criteria),newVersion,JSON.stringify(criteria),judgeCount,actorUid]);
+    this.sheet_("SETTINGS").getRange(old.rowNumber,3).setValue(judgeCount);
+    this.sheet_("SETTINGS").getRange(old.rowNumber,5,1,2)
+      .setValues([[newVersion,JSON.stringify(criteria)]]);
+  }
   appendCheckin(value){
     this.sheet_("CHECKINS").appendRow([value.participantId,value.competition,
       value.startNo,value.at,value.actorUid]);

@@ -1,8 +1,10 @@
 "use strict";
 /** TF26 application use cases. Client-provided role/competition has no authority. */
 class TF26Application {
-  constructor(store,locks,clock,assignments){
-    this.store_=store;this.locks_=locks;this.clock_=clock;this.assignments_=assignments||{};
+  constructor(store,locks,clock,assignments,approvedTwoJudgeBranches){
+    this.store_=store;this.locks_=locks;this.clock_=clock;
+    this.assignments_=assignments||{};
+    this.approvedTwoJudgeBranches_=approvedTwoJudgeBranches||[];
   }
   stamp_(){return this.clock_();}
   assertActor_(actor,roles){
@@ -124,6 +126,27 @@ class TF26Application {
         actorUid:actor.uid,at});
       this.store_.appendAudit(actor.uid,"CHECKIN",p.id,p.competition+"#"+next,at);
       return {competition:p.competition,startNo:next,repeated:false};
+    });
+  }
+  updateScheme(actor,req){
+    this.assertActor_(actor,["admin"]);
+    if(!req||!["MDG","THF","MWN"].includes(req.competition)||
+      ![2,3].includes(req.requiredJudges))throw Error("INVALID_CONFIGURATION");
+    TF26Domain.checkScheme(req.criteria);
+    if(req.criteria.some(c=>c[0].trim().length>80))throw Error("INVALID_SCHEME");
+    if(req.requiredJudges===2&&["MDG","THF"].includes(req.competition)&&
+       !this.approvedTwoJudgeBranches_.includes(req.competition))
+      throw Error("POLICY_ADDENDUM_REQUIRED");
+    return this.locked_(()=>{
+      const conf=this.setting_(req.competition);
+      if(!["READY","DRAFT"].includes(conf.state)||
+        this.store_.scores().some(row=>row.competition===req.competition))
+        throw Error("WRONG_PHASE");
+      const newVersion=conf.version+1;
+      this.store_.updateScheme(conf,req.criteria,req.requiredJudges,newVersion,actor.uid,this.stamp_());
+      this.store_.appendAudit(actor.uid,"SCHEME_UPDATE",req.competition,
+        "v"+conf.version+"->v"+newVersion+";required="+req.requiredJudges,this.stamp_());
+      return {competition:req.competition,version:newVersion,requiredJudges:req.requiredJudges};
     });
   }
   setJudgingOpen(actor,competition){

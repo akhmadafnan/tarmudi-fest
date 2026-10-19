@@ -99,6 +99,9 @@ function describe(code){
   NOT_VERIFIED:"Peserta belum terverifikasi.",
   INVALID_POINTS:"Ada nilai di luar batas kriteria atau belum lengkap.",
   INVALID_IMPORT:"Data CSV tidak valid. Periksa format dan batas peserta per sekolah.",
+  INVALID_SCHEME:"Skema tidak valid; pastikan jumlah maksimum poin tepat 100.",
+  INVALID_CONFIGURATION:"Pengaturan cabang atau jumlah juri tidak valid.",
+  POLICY_ADDENDUM_REQUIRED:"Dua juri untuk cabang ini membutuhkan addendum juknis resmi yang disahkan panitia terlebih dahulu.",
   IMPORT_LOCKED:"Impor penggantian ditolak: check-in atau penjurian sudah dimulai. Data lama tidak dihapus.",
   NOT_CHECKED_IN:"Nomor tersebut belum check-in.",
   SCORE_LOCKED:"Nilai sudah FINAL dan terkunci.",
@@ -157,7 +160,16 @@ function drawAdmin(root){
   const btn=node("button",{class:"small-btn"},["Buka penjurian"]);
   btn.disabled=c.phase!=="READY"||c.assignedJudgeCount!==c.requiredJudges;
   btn.onclick=()=>{if(confirm("Buka penjurian "+c.label+"? Kriteria akan dikunci."))submitAction("OPEN_JUDGING",{competition:c.competition},"Penjurian dibuka.");};
-  content.append(btn);return content;
+  content.append(btn);
+  const configure=node("button",{class:"small-btn secondary"},["Atur skema"]);
+  configure.disabled=!["DRAFT","READY"].includes(c.phase);
+  const editor=node("div",{class:"hidden"},[]);
+  configure.onclick=()=>{
+   editor.classList.toggle("hidden");
+   if(!editor.classList.contains("hidden"))drawSchemeEditor(editor,c);
+  };
+  content.append(configure,editor);
+  return content;
  }));
  const importer=drawImporter();
  const entries=drawRegistration(null,true);
@@ -224,6 +236,21 @@ function drawImporter(){
  };
  card.append(file,node("div",{class:"controls"},[preview,commit]),result);
  return card;
+}
+function drawSchemeEditor(root,conf){
+ const card=node("div",{class:"panel"},[]);
+ card.append(node("h3",null,["Skema "+conf.label]));
+ card.append(node("p",{class:"small"},["Jumlah poin maksimum wajib tepat 100. Perubahan hanya boleh sebelum penjurian dibuka."]));
+ const source=(DATA.config||[]).find(c=>c.competition===conf.competition);
+ // Criteria are read from admin-specific request rather than from a judge account.
+ // Until scheme editing is enabled in the private admin response, show only judge count.
+ const count=node("input",{type:"number",min:"2",max:"3",step:"1"});
+ count.value=String(source.requiredJudges);
+ const label=node("label",null,["Juri wajib (2–3)"]);card.append(label,count);
+ const button=node("button",{class:"secondary"},["Simpan jumlah juri"]);
+ button.onclick=()=>msg("Perubahan bobot/kriteria disiapkan melalui versi skema baru. Gunakan formulir Admin setelah data lengkap tersedia.",true);
+ card.append(button);
+ render(root,[card]);
 }
 function drawRegistration(root,asAdmin){
  const wrap=node("section",{class:"panel"},[]);
