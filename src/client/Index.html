@@ -188,6 +188,28 @@ body{overflow-x:hidden}
  .jury-correct-actions button{width:100%;min-height:48px}
 }
 
+/* TF26 MOBILE REGISTRATION/JURY FILTERS: all four choices visible, no rail. */
+@media(max-width:700px){
+ .chips.registration-filters,
+ .chips.jury-filters{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  overflow:visible;
+  padding:4px 0 10px;
+ }
+ .chips.registration-filters .chip,
+ .chips.jury-filters .chip{
+  width:100%;
+  min-width:0;
+  min-height:46px;
+  padding:9px 7px;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  line-height:1.25;
+  text-align:center;
+ }
+}
 </style></head>
 <body><div class="shell">
 <header class="topbar"><div class="brand">TARMUDI <span>FEST</span> <strong>2026</strong></div><span class="tag">Kampus 2 • MIS Tarbiyatul Mubtadiin</span></header>
@@ -693,6 +715,29 @@ function tf26RegistrationOrder(a,b){
   const nameOrder=String(a.fullName||"").localeCompare(String(b.fullName||""),"id",{sensitivity:"base"});
   return nameOrder||String(a.id||"").localeCompare(String(b.id||""));
 }
+/**
+ * One source of truth for the registration summaries and visible rows.
+ * The counters are always scoped to the chosen competition; text search only
+ * changes the third (displayed) counter, never branch totals/check-ins.
+ * Registrars receive only their scoped participants from the backend.
+ */
+function tf26RegistrationSummary(participants,branch,query,asAdmin){
+ const selected=asAdmin?branch:"ALL";
+ const scoped=(Array.isArray(participants)?participants:[]).filter(p=>
+  selected==="ALL"||p.competition===selected
+ );
+ const needle=String(query||"").trim().toLocaleLowerCase("id-ID");
+ const entries=scoped.filter(p=>[
+    p.fullName,p.school,p.id,tf26DisplayCompetitionCode(p.competition)
+   ].some(x=>String(x||"").toLocaleLowerCase("id-ID").includes(needle))
+ ).sort(tf26RegistrationOrder);
+ return {
+  participants:scoped.length,
+  checkedIn:scoped.filter(p=>tf26HasStartNumber(p.startNo)).length,
+  displayed:entries.length,
+  entries
+ };
+}
 function drawRegistration(root,asAdmin){
  const wrap=node("section",{class:"panel registration-panel"},[]);
  wrap.append(node("h2",null,["Registrasi ulang peserta"]));
@@ -730,18 +775,12 @@ function drawRegistration(root,asAdmin){
  const list=node("div",{class:"results"},[]);wrap.append(list);
  input.oninput=()=>{FILTER=input.value;displayRows();};
  function displayRows(){
-  const all=DATA.participants||[];
-  const query=FILTER.trim().toLocaleLowerCase("id-ID");
-  const filtered=all.filter(p=>{
-   if(asAdmin&&currentBranch!=="ALL"&&p.competition!==currentBranch)return false;
-   return [p.fullName,p.school,p.id,tf26DisplayCompetitionCode(p.competition)]
-    .some(x=>String(x||"").toLocaleLowerCase("id-ID").includes(query));
-  }).sort(tf26RegistrationOrder);
-  const attended=all.filter(x=>tf26HasStartNumber(x.startNo)).length;
+  const summary=tf26RegistrationSummary(DATA.participants,currentBranch,FILTER,asAdmin);
+  const filtered=summary.entries;
   render(status,[
-   node("div",{class:"stat"},[all.length+" peserta"]),
-   node("div",{class:"stat"},[attended+" sudah check-in"]),
-   node("div",{class:"stat"},[filtered.length+" ditampilkan"])
+   node("div",{class:"stat"},[summary.participants+" peserta"]),
+   node("div",{class:"stat"},[summary.checkedIn+" sudah check-in"]),
+   node("div",{class:"stat"},[summary.displayed+" ditampilkan"])
   ]);
   render(list,filtered.map(p=>{
    const checkedIn=tf26HasStartNumber(p.startNo);
