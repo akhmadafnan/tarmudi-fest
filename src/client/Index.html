@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="id">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#202020;background:#fff8e8}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(132deg,#fff8e8 20%,#faf2d8 100%);min-height:100vh}
+button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:wait;opacity:.52}
+.shell{max-width:1160px;margin:0 auto;padding:18px 16px 70px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-size:15px;font-weight:950;letter-spacing:-.025em}.brand span{color:#23654a}.small{font-size:12px;color:#5b5b57}.tag{display:inline-flex;border:2px solid #202020;border-radius:100px;background:#d5f18a;padding:6px 12px;font-weight:750;font-size:12px}
+button{border:2px solid #202020;border-radius:6px;background:#f9cf45;padding:11px 15px;font-weight:850;min-height:44px;box-shadow:3px 3px 0 #202020}
+button:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:4px 4px 0 #202020}
+button.secondary{background:#fff}button.green{background:#d5f18a}button.danger{background:#ffe4df}
+button.small-btn{font-size:13px;padding:7px 10px;min-height:36px}
+.hero{margin:24px 0 18px;background:#fff;border:3px solid #202020;box-shadow:7px 7px 0 #202020;border-radius:10px;padding:22px;display:grid;gap:10px}
+.eyebrow{font-weight:950;text-transform:uppercase;font-size:11px;letter-spacing:.17em;color:#23654a}
+h1{font-size:clamp(28px,6vw,46px);margin:0;letter-spacing:-.055em;line-height:1.1}
+h2{font-size:clamp(20px,4vw,28px);letter-spacing:-.025em;margin:0 0 12px}
+h3{font-size:17px;margin:0 0 8px}p{line-height:1.5;margin:8px 0;color:#474747}
+.panel{background:#fff;border:2px solid #202020;box-shadow:4px 4px 0 #202020;border-radius:8px;padding:16px;margin-top:18px}
+.login{max-width:470px;margin:20px auto 0}label{display:block;font-weight:850;margin:13px 0 6px;font-size:13px}
+input{width:100%;min-height:46px;border:2px solid #202020;background:#fff;border-radius:5px;padding:11px;font-size:16px}
+input:focus,button:focus-visible{outline:3px solid #2b8f70;outline-offset:2px}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{padding:7px 10px;font-size:13px;min-height:38px;background:#fff;box-shadow:2px 2px 0 #202020}
+.chip.selected{background:#d5f18a}.statline{display:flex;gap:9px;flex-wrap:wrap}
+.stat{padding:10px 13px;background:#fff;border:2px solid #202020;border-radius:6px;font-weight:900}
+.stat span{font-size:11px;font-weight:650;color:#575757;display:block}
+.results{display:grid;gap:10px}.participant,.rank-row{display:flex;gap:14px;align-items:center;justify-content:space-between;border:2px solid #202020;padding:12px;border-radius:7px;background:#fff}
+.participant{flex-wrap:wrap}.participant strong{display:block}.participant small{color:#545454}.num{font-size:29px;font-weight:950;font-variant-numeric:tabular-nums}
+.good{background:#d5f18a}.warn{background:#fff1bd}.error{background:#ffe0d7}
+.message{margin:14px 0;padding:11px;border:2px solid #202020;border-radius:6px;background:#f9cf45;white-space:pre-wrap}
+.hidden{display:none!important}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px}
+.score-row{display:grid;grid-template-columns:1fr minmax(90px,120px);align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #ddd}
+.score-row:last-child{border:0}.score-row label{margin:0}.score-max{font-size:11px;color:#5a5a5a}.noresults{text-align:center;color:#555;padding:36px 10px}
+.badge{font-size:11px;border-radius:100px;padding:4px 8px;border:1px solid #202020;background:#fff}
+#loading{position:fixed;right:12px;bottom:12px;padding:12px;border:2px solid #202020;background:#f9cf45;box-shadow:3px 3px 0 #202020;font-weight:800}
+footer{margin-top:45px;font-size:12px;color:#666}
+@media(min-width:800px){.hero{padding:30px;grid-template-columns:1fr auto;align-items:center}.shell{padding:23px 30px}.panel{padding:21px}}
+@media(prefers-reduced-motion:reduce){button{transition:none}*{scroll-behavior:auto!important}}
+</style></head>
+<body><div class="shell">
+<header class="topbar"><div class="brand">TARMUDI <span>FEST</span> <strong>2026</strong></div><span class="tag">Kampus 2 • MIS Tarbiyatul Mubtadiin</span></header>
+<section class="hero">
+ <div><div class="eyebrow">Sistem lomba • 24 Oktober 2026</div><h1>Setiap peserta,<br>satu panggung prestasi.</h1>
+ <p>Registrasi ulang, penjurian anonim, dan hasil lomba dalam satu layanan.</p></div>
+ <div class="controls"><button type="button" id="view-public" class="green">Lihat hasil sementara</button><button type="button" id="back-admin" class="secondary hidden">Panel saya</button></div>
+</section>
+<div role="status" aria-live="polite" class="message hidden" id="message"></div>
+<section id="login-panel" class="panel login">
+ <h2>Masuk ke sistem</h2><p class="small">Admin, Petugas Registrasi, dan Juri. Akun hanya diberikan panitia.</p>
+ <form id="login-form">
+ <label for="user">Username / email akun uji</label><input id="user" autocomplete="username" placeholder="Masukkan username" required maxlength="120">
+ <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required minlength="8">
+ <button type="submit" id="login-btn" style="width:100%;margin-top:18px">Masuk →</button>
+ </form><p class="small">Uji coba menggunakan data sintetis. Tidak ada akses publik ke identitas peserta.</p>
+</section>
+<section id="workspace" class="hidden">
+ <div class="controls"><span class="tag" id="role-label"></span><button id="refresh" class="secondary">Muat ulang</button><button id="logout" class="secondary">Keluar</button></div>
+ <div id="workspace-body"></div>
+</section>
+<section id="public-panel" class="hidden panel">
+ <h2>Hasil lomba</h2><p>Selama penjurian, hanya nomor start dan nilai yang memenuhi syarat ditampilkan. Hasil resmi menunggu pengesahan panitia.</p>
+ <div class="chips" id="public-tabs"></div><div id="public-body"></div>
+</section>
+<footer>© 2026 Tarmudi Fest • Prototipe operasional — aktifkan hanya setelah UAT dan persetujuan panitia.</footer>
+</div><div class="hidden" id="loading" aria-live="polite">Menghubungi server...</div>
+<script>
+"use strict";
+const CFG=<?!= publicConfig ?>;
+let TOKEN=null,IDENTITY=null,DATA=null,PUBLIC=false,BRANCH="THF",FILTER="";
+const $=id=>document.getElementById(id);
+function text(value){return document.createTextNode(String(value===null||value===undefined?"":value));}
+function node(tag,props,children){
+ const el=document.createElement(tag);
+ if(props)for(const key in props){
+  if(key==="class")el.className=props[key];
+  else if(key==="type"||key==="value"||key==="placeholder"||key==="min"||key==="max"||key==="step"||key==="inputMode")el.setAttribute(key,props[key]);
+ }
+ for(const ch of (children||[]))el.append(ch instanceof Node?ch:text(ch));
+ return el;
+}
+function render(root,children){root.replaceChildren(...children);}
+function msg(message,isError){
+ const el=$("message");el.textContent=message;el.className="message "+(isError?"error":"good");
+ if(!message)el.classList.add("hidden");
+}
+function busy(on){$("loading").classList.toggle("hidden",!on)}
+function call(name,args){
+ return new Promise((resolve,reject)=>{
+  if(!google||!google.script||!google.script.run){reject(Error("NO_SERVER"));return}
+  google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name](...args);
+ });
+}
+function describe(code){
+ return {
+  AUTH_REQUIRED:"Sesi telah habis atau akun tidak diizinkan. Silakan login lagi.",
+  NOT_ALLOWED:"Akses ditolak. Tindakan ini tidak sesuai peran/cabang Anda.",
+  INVALID_REQUEST:"Data masukan tidak sesuai format.",
+  NOT_VERIFIED:"Peserta belum terverifikasi.",
+  INVALID_POINTS:"Ada nilai di luar batas kriteria atau belum lengkap.",
+  NOT_CHECKED_IN:"Nomor tersebut belum check-in.",
+  SCORE_LOCKED:"Nilai sudah FINAL dan terkunci.",
+  JUDGING_NOT_OPEN:"Penjurian cabang ini belum dibuka Admin.",
+  JUDGES_INCOMPLETE:"Jumlah juri aktif belum mencapai jumlah yang disahkan.",
+  WRONG_PHASE:"Status cabang tidak memperbolehkan operasi ini.",
+  DATABASE_NOT_READY:"Database belum dihubungkan. Hubungi pengelola sistem.",
+  BUSY_RETRY:"Server sibuk. Silakan coba lagi.",
+  REQUEST_FAILED:"Permintaan gagal di server; jangan anggap data tersimpan."
+ }[code]||"Terjadi kendala. Silakan coba lagi.";
+}
+function showLogin(){PUBLIC=false;$("login-panel").classList.remove("hidden");$("workspace").classList.add("hidden");$("public-panel").classList.add("hidden");$("back-admin").classList.add("hidden")}
+function showWorkspace(){PUBLIC=false;$("login-panel").classList.add("hidden");$("workspace").classList.remove("hidden");$("public-panel").classList.add("hidden");$("back-admin").classList.add("hidden")}
+async function dashboard(){
+ if(!TOKEN){showLogin();return}
+ busy(true);
+ try{
+  const response=await call("apiApp",[TOKEN]);
+  if(!response||!response.ok)throw Error(response&&response.error||"REQUEST_FAILED");
+  DATA=response.data;
+  $("role-label").textContent=DATA.role.toUpperCase()+(DATA.competition?" • "+DATA.competition:"");
+  showWorkspace();drawWorkspace();
+  msg("");
+ }catch(e){msg(describe(e.message),true)}
+ finally{busy(false)}
+}
+async function submitAction(action,payload,success){
+ if(!TOKEN){showLogin();return}busy(true);
+ try{
+  const response=await call("apiCommand",[TOKEN,action,payload]);
+  if(!response||!response.ok)throw Error(response&&response.error||"REQUEST_FAILED");
+  msg(success||"Perubahan berhasil disimpan oleh server.");
+  await dashboard();
+  return response.data;
+ }catch(e){msg(describe(e.message),true)}
+ finally{busy(false)}
+}
+const branches={MDG:"Mendongeng",THF:"Tahfidz",MWN:"Mewarnai"};
+function drawWorkspace(){
+ const root=$("workspace-body");
+ if(DATA.role==="juri")return drawJudge(root);
+ if(DATA.role==="registrasi")return drawRegistration(root,false);
+ return drawAdmin(root);
+}
+function drawAdmin(root){
+ const head=node("section",{class:"panel"},[
+  node("h2",null,["Panel Admin"]),
+  node("p",null,["Semua peserta dapat diperiksa di sini. Juri tidak dapat melihat halaman ini."])
+ ]);
+ const stats=node("div",{class:"grid"},DATA.config.map(c=>{
+  const content=node("div",{class:"panel"},[
+   node("div",{class:"eyebrow"},[c.competition]),node("h3",null,[c.label]),
+   node("p",null,["Status: "+c.phase]),
+   node("p",{class:"small"},["Juri aktif: "+c.assignedJudgeCount+" / "+c.requiredJudges])
+  ]);
+  const btn=node("button",{class:"small-btn"},["Buka penjurian"]);
+  btn.disabled=c.phase!=="READY"||c.assignedJudgeCount!==c.requiredJudges;
+  btn.onclick=()=>{if(confirm("Buka penjurian "+c.label+"? Kriteria akan dikunci."))submitAction("OPEN_JUDGING",{competition:c.competition},"Penjurian dibuka.");};
+  content.append(btn);return content;
+ }));
+ const entries=drawRegistration(null,true);
+ render(root,[head,stats,entries]);
+}
+function drawRegistration(root,asAdmin){
+ const wrap=node("section",{class:"panel"},[]);
+ wrap.append(node("h2",null,["Registrasi ulang peserta"]));
+ const input=node("input",{placeholder:"Cari nama, sekolah, atau ID peserta"});
+ input.value=FILTER; input.oninput=()=>{FILTER=input.value;displayRows();};
+ wrap.append(input);
+ const status=node("div",{class:"statline"});
+ wrap.append(status);
+ const list=node("div",{class:"results"});wrap.append(list);
+ function displayRows(){
+  const all=DATA.participants||[];
+  const filtered=all.filter(p=>[p.fullName,p.school,p.id].some(x=>x.toLowerCase().includes(FILTER.trim().toLowerCase())));
+  render(status,[node("div",{class:"stat"},[all.length+" peserta"]),node("div",{class:"stat"},[all.filter(x=>x.startNo!==null).length+" sudah check-in"])]);
+  render(list,filtered.map(p=>{
+   const n=p.startNo===null?"—":String(p.startNo).padStart(3,"0");
+   const item=node("div",{class:"participant"},[
+    node("div",null,[node("strong",null,[p.fullName]),node("small",null,[p.school+" • "+branches[p.competition]+" • "+p.id])]),
+    node("div",{class:"num"},[n])
+   ]);
+   const button=node("button",{class:"small-btn "+(p.startNo!==null?"green":"")},[p.startNo===null?"Check-in & nomor":"Sudah hadir"]);
+   button.disabled=p.startNo!==null||!p.verified;
+   button.onclick=()=>{if(confirm("Konfirmasi kehadiran "+p.fullName+"?"))submitAction("CHECK_IN",{id:p.id},"Nomor start berhasil ditetapkan.");};
+   item.append(button);return item;
+  }));
+  if(!filtered.length)list.append(node("div",{class:"noresults"},["Peserta tidak ditemukan."]));
+ }
+ displayRows();
+ if(root){render(root,[wrap]);}
+ return wrap;
+}
+function drawJudge(root){
+ const wrap=node("section",{class:"panel"},[]);
+ wrap.append(node("h2",null,["Panel Juri • "+branches[DATA.competition]]));
+ wrap.append(node("p",null,["Peserta ditampilkan dengan nomor start saja. Nama/sekolah tidak dikirim ke perangkat juri."]));
+ const state=node("div",{class:"statline"},[node("div",{class:"stat"},["Status: "+DATA.phase]),node("div",{class:"stat"},[(DATA.entries||[]).length+" peserta check-in"])]);
+ wrap.append(state);
+ const list=node("div",{class:"results"});
+ for(const entry of (DATA.entries||[])){
+  const card=node("div",{class:"panel"},[]);
+  const scoreTitle=node("h3",null,["Nomor "+String(entry.startNo).padStart(3,"0")]);
+  card.append(scoreTitle,node("p",{class:"small"},["Status nilai sendiri: "+entry.status]));
+  const numeric=[];
+  DATA.criteria.forEach((crit,index)=>{
+   const input=node("input",{type:"number",min:"0",max:String(crit[1]),step:"1",inputMode:"numeric"});
+   input.value=entry.ownPoints&&entry.ownPoints[index]!==undefined&&entry.ownPoints[index]!==null?entry.ownPoints[index]:"";
+   input.disabled=DATA.phase!=="JUDGING_OPEN"||entry.status==="FINAL";
+   numeric.push(input);
+   card.append(node("div",{class:"score-row"},[node("label",null,[crit[0],node("div",{class:"score-max"},["Maks. "+crit[1]+" poin"])]),input]));
+  });
+  const actions=node("div",{class:"controls"},[]);
+  for(const isFinal of [false,true]){
+   const btn=node("button",{class:isFinal?"green":"secondary"},[isFinal?"Finalisasi nilai":"Simpan draft"]);
+   btn.disabled=DATA.phase!=="JUDGING_OPEN"||entry.status==="FINAL";
+   btn.onclick=()=>{
+    const values=numeric.map(inp=>inp.value.trim()===""?null:Number(inp.value));
+    if(values.some((v,i)=>v!==null&&(!Number.isInteger(v)||v<0||v>DATA.criteria[i][1]))){msg("Periksa poin di luar batas.",true);return}
+    if(isFinal&&values.some(v=>v===null)){msg("Isi seluruh kriteria untuk finalisasi.",true);return}
+    if(isFinal&&!confirm("Finalisasi nomor "+String(entry.startNo).padStart(3,"0")+"? Setelah FINAL nilai terkunci."))return;
+    submitAction("SAVE_SCORE",{startNo:entry.startNo,points:values,final:isFinal},isFinal?"Nilai FINAL tersimpan di server.":"Draft tersimpan di server.");
+   };
+   actions.append(btn);
+  }
+  card.append(actions);list.append(card);
+ }
+ if(!(DATA.entries||[]).length)list.append(node("div",{class:"noresults"},["Belum ada peserta check-in pada cabang ini."]));
+ wrap.append(list);render(root,[wrap]);
+}
+function tabs(){
+ const root=$("public-tabs");
+ render(root,Object.entries(branches).map(([code,label])=>{
+  const b=node("button",{class:"chip "+(BRANCH===code?"selected":"")},[label]);
+  b.onclick=()=>{BRANCH=code;tabs();loadPublic();};return b;
+ }));
+}
+async function loadPublic(){
+ busy(true);
+ try{
+  const response=await call("apiPublic",[BRANCH]);
+  if(!response||!response.ok)throw Error(response&&response.error||"REQUEST_FAILED");
+  const data=response.data;const root=$("public-body");
+  const rows=(data.results||[]).map(p=>{
+   const name=p.fullName?" — "+p.fullName+" ("+p.school+")":"";
+   return node("div",{class:"rank-row"},[
+    node("div",null,[node("strong",null,[(p.rank===null?"Seri":"#"+p.rank)+" • Nomor "+String(p.startNo).padStart(3,"0")]),node("div",{class:"small"},[p.pendingDeliberation?"Menunggu musyawarah juri":"Nilai lengkap"+name])]),
+    node("div",{class:"num"},[p.meanScore.toFixed(2)])
+   ]);
+  });
+  render(root,[node("p",{class:"small"},["Fase: "+data.phase+" • Pembaruan: "+data.updatedAt]),...rows]);
+  if(!rows.length)root.append(node("div",{class:"noresults"},["Belum ada hasil yang memenuhi kelengkapan penilaian seluruh juri wajib."]));
+ }catch(e){msg(describe(e.message),true)}
+ finally{busy(false)}
+}
+function publicView(){
+ PUBLIC=true;
+ $("login-panel").classList.add("hidden");$("workspace").classList.add("hidden");
+ $("public-panel").classList.remove("hidden");$("back-admin").classList.toggle("hidden",!TOKEN);
+ tabs();loadPublic();
+}
+$("login-form").onsubmit=async(e)=>{
+ e.preventDefault();
+ if(!CFG.apiKey){msg("Firebase belum dikonfigurasi.",true);return}
+ const identifier=$("user").value.trim().toLowerCase();
+ const isEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+ if(!isEmail&&!/^[a-z0-9-]{3,40}$/.test(identifier)){msg("Format username/email tidak valid.",true);return}
+ if(!isEmail&&!CFG.domain){msg("Domain akun internal belum tersedia.",true);return}
+ const email=isEmail?identifier:identifier+"@"+CFG.domain;
+ busy(true);
+ try{
+  const response=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+encodeURIComponent(CFG.apiKey),{
+   method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({email,password:$("password").value,returnSecureToken:true})
+  });
+  $("password").value="";
+  if(!response.ok)throw Error("AUTH_REQUIRED");
+  const payload=await response.json();
+  if(!payload.idToken)throw Error("AUTH_REQUIRED");
+  const checked=await call("apiWhoAmI",[payload.idToken]);
+  if(!checked||checked.ok!==true)throw Error("AUTH_REQUIRED");
+  TOKEN=payload.idToken;
+  await dashboard();
+ }catch(e){TOKEN=null;showLogin();msg("Username atau password tidak valid / tidak memiliki izin.",true)}
+ finally{busy(false)}
+};
+$("logout").onclick=()=>{TOKEN=null;IDENTITY=null;DATA=null;$("password").value="";showLogin();msg("Anda berhasil keluar.");};
+$("refresh").onclick=dashboard;
+$("view-public").onclick=publicView;
+$("back-admin").onclick=dashboard;
+showLogin();
+</script>
+</body></html>
