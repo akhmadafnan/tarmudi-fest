@@ -22,6 +22,8 @@ function app(){
   appendCheckin:x=>data.checkins.push(x),
   updateScheme:(old,criteria,count,v)=>{old.criteria=criteria;old.requiredJudges=count;old.version=v;},
   markOfficial:(conf,uid,at)=>{conf.state="OFFICIAL";conf.publication="OFFICIAL";conf.privacyApproved=true;conf.approvedBy=uid;conf.approvedAt=at;},
+  tieDecisions:()=>data.ties||[],
+  appendTieDecision:x=>{if(!data.ties)data.ties=[];data.ties.push(x);},
   replaceParticipants:x=>{data.participants=x.map(p=>({id:p.id,fullName:p.fullName,school:p.school,competition:p.competition,verified:p.status==="TERVERIFIKASI"}));return "BACKUP_TEST";},
   saveScore:(x,old)=>{if(old){Object.assign(old,x)}else data.scores.push({...x})},
   setPhase:(s,v)=>{s.state=v},
@@ -163,4 +165,10 @@ test("Official publication requires explicit owner privacy authorization",()=>{
 test("Registrar/judge never allowed to close or publish results",()=>{
  const s=app();assert.throws(()=>s.service.closeJudging(judge,"THF"),/NOT_ALLOWED/);
  assert.throws(()=>s.service.publishOfficial(registrar,"MDG"),/NOT_ALLOWED/);
+});
+
+test("Only Admin may resolve tie and written reason is mandatory",()=>{
+ const s=app();s.data.settings[0].state="REVIEW";
+ assert.throws(()=>s.service.resolveTie(judge,{competition:"THF",orderedStartNumbers:[1,2],reason:"Dokumentasi lengkap dewan juri."}),/NOT_ALLOWED/);
+ assert.throws(()=>s.service.resolveTie(admin,{competition:"THF",orderedStartNumbers:[1,2],reason:"too short"}),/INVALID_TIE_DECISION/);
 });

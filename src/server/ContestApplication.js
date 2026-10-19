@@ -187,6 +187,47 @@ class TF26Application {
       return {competition,state:"REVIEW",completed:results.length};
     });
   }
+  resolveTie(actor,req){
+    this.assertActor_(actor,["admin"]);
+    if(!req||!["MDG","THF","MWN"].includes(req.competition)||
+      !Array.isArray(req.orderedStartNumbers)||req.orderedStartNumbers.length<2||
+      !req.orderedStartNumbers.every(n=>Number.isInteger(n)&&n>0)||
+      typeof req.reason!=="string"||req.reason.trim().length<15||req.reason.length>500)
+      throw Error("INVALID_TIE_DECISION");
+    return this.locked_(()=>{
+      const conf=this.setting_(req.competition);
+      if(conf.state!=="REVIEW")throw Error("WRONG_PHASE");
+      const all=this.publicResults(req.competition).results;
+      const pending=all.filter(x=>x.pendingDeliberation);
+      const candidates=pending.filter(x=>req.orderedStartNumbers.includes(x.startNo));
+      if(candidates.length!==req.orderedStartNumbers.length||
+        new Set(req.orderedStartNumbers).size!==req.orderedStartNumbers.length)
+        throw Error("INVALID_TIE_DECISION");
+      // All selected participants must share a tied score group.
+      if(new Set(candidates.map(x=>x.meanScore)).size!==1||
+        pending.filter(x=>x.meanScore===candidates[0].meanScore).length!==candidates.length)
+        throw Error("INVALID_TIE_DECISION");
+      const key=this.tieKey_(req.competition,candidates[0].startNo,conf);
+      if(!key)throw Error("INVALID_TIE_DECISION");
+      const payload={competition:req.competition,orderedStartNumbers:req.orderedStartNumbers,
+        scoreKey:key,reason:req.reason.trim(),actorUid:actor.uid,at:this.stamp_()};
+      this.store_.appendTieDecision(payload);
+      this.store_.appendAudit(actor.uid,"RESOLVE_TIE",req.competition,
+        "numbers="+payload.orderedStartNumbers.join(",")+";reason_documented",payload.at);
+      return {competition:req.competition,orderedStartNumbers:req.orderedStartNumbers,resolved:true};
+    });
+  }
+  tieKey_(competition,startNo,conf){
+    const scores=this.store_.scores().filter(x=>x.competition===competition&&x.startNo===startNo&&
+      x.version===conf.version&&x.status==="FINAL"&&this.assignedJudges_(competition).includes(x.judgeUid));
+    if(scores.length!==conf.requiredJudges)return null;
+    let sum=0;const parts=Array(conf.criteria.length).fill(0);
+    for(const score of scores){
+      sum+=TF26Domain.validatePoints(conf.criteria,score.points);
+      score.points.forEach((v,i)=>parts[i]+=v);
+    }
+    return competition==="THF"?[sum,...parts].join(":"):String(sum);
+  }
   publishOfficial(actor,competition){
     this.assertActor_(actor,["admin"]);
     if(!["MDG","THF","MWN"].includes(competition))throw Error("INVALID_REQUEST");
@@ -247,7 +288,7 @@ class TF26Application {
       competition,criteria:conf.criteria,requiredJudges:conf.requiredJudges,
       assignedJudgeUids:judges,checkins:attendance,scores:this.store_.scores(),
       schemeVersion:conf.version,phase:conf.publication,privacyApproved:conf.privacyApproved,
-      participants
+      participants,tieDecisions:this.store_.tieDecisions()
     });
     return {competition,phase:conf.publication==="OFFICIAL"&&conf.privacyApproved?"OFFICIAL":"INTERIM",
       results:result,updatedAt:this.stamp_()};

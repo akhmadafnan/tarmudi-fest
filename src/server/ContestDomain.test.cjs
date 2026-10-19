@@ -52,3 +52,18 @@ test("only scoped assigned judges counted",()=>{
  assert.deepEqual(TF26Domain.rank(input(scores)),[]);
 });
 test("invalid active judge-count has no ranking",()=>assert.deepEqual(TF26Domain.rank(input(assigned.map(j=>record(1,j,[35,27,18,8])),{assignedJudgeUids:["judge1"]})),[]));
+
+test("Recorded jury deliberation deterministically resolves two-way tie",()=>{
+ const tied=[...assigned.map(j=>record(1,j,[40,20,20,10])),...assigned.map(j=>record(2,j,[40,20,20,10]))];
+ const choice={competition:"THF",scoreKey:"270:120:60:60:30",orderedStartNumbers:[2,1]};
+ const out=TF26Domain.rank(input(tied,{tieDecisions:[choice]}));
+ assert.equal(out[0].startNo,2);assert.equal(out[0].rank,1);
+ assert.equal(out[1].startNo,1);assert.equal(out[1].rank,2);
+ assert.equal(out[0].pendingDeliberation,false);
+});
+test("Invalid tie decision with missing winner never silently assigns a rank",()=>{
+ const tied=[...assigned.map(j=>record(1,j,[40,20,20,10])),...assigned.map(j=>record(2,j,[40,20,20,10]))];
+ const choice={competition:"THF",scoreKey:"270:120:60:60:30",orderedStartNumbers:[99,1]};
+ const out=TF26Domain.rank(input(tied,{tieDecisions:[choice]}));
+ assert.ok(out.every(x=>x.rank===null&&x.pendingDeliberation));
+});

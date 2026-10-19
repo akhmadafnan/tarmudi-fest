@@ -37,7 +37,7 @@ class TF26Domain {
     return total;
   }
   static rank(input) {
-    const {competition,criteria,requiredJudges,assignedJudgeUids,checkins,scores,phase,participants,privacyApproved}=input||{};
+    const {competition,criteria,requiredJudges,assignedJudgeUids,checkins,scores,phase,participants,privacyApproved,tieDecisions}=input||{};
     TF26Domain.checkScheme(criteria);
     if(!["MDG","THF","MWN"].includes(competition)||![2,3].includes(requiredJudges))throw Error("INVALID_CONFIGURATION");
     const judgeIds=Array.isArray(assignedJudgeUids)?assignedJudgeUids:[];
@@ -64,20 +64,49 @@ class TF26Domain {
       }
       return a.startNo-b.startNo; // display only, not a tie-resolution decision
     });
-    let prior=null;let baseRank=0;
     const official=phase==="OFFICIAL"&&privacyApproved===true;
-    return result.map((item,i)=>{
-      const scoreKey=competition==="THF"?[item.sum,...item.criteriaSum].join(":"):String(item.sum);
-      if(scoreKey!==prior){baseRank=i+1;prior=scoreKey;}
-      const neighborSame=result.some(other=>other!==item&&
-        (competition==="THF"?[other.sum,...other.criteriaSum].join(":"):String(other.sum))===scoreKey);
-      const row={competition,startNo:item.startNo,meanScore:Number((item.sum/requiredJudges).toFixed(2)),rank:neighborSame?null:baseRank,pendingDeliberation:neighborSame,phase:official?"OFFICIAL":"INTERIM"};
-      if(official){
-        const p=(participants||[]).find(x=>x.competition===competition&&x.startNo===item.startNo);
-        if(p){row.fullName=p.fullName;row.school=p.school;}
+    const groups=[];
+    function key(item){return competition==="THF"?[item.sum,...item.criteriaSum].join(":"):String(item.sum);}
+    for(const candidate of result){
+      let group=groups[groups.length-1];
+      if(!group||group.key!==key(candidate)){
+        group={key:key(candidate),members:[]};groups.push(group);
       }
-      return row;
-    });
+      group.members.push(candidate);
+    }
+    const ranked=[];let position=1;
+    for(const group of groups){
+      const members=group.members.slice();
+      let ordered=false;
+      if(members.length>1){
+        const options=(tieDecisions||[]).filter(d=>d&&d.competition===competition&&d.scoreKey===group.key);
+        const valid=options.find(d=>{
+          const nums=d.orderedStartNumbers;
+          return Array.isArray(nums)&&nums.length===members.length&&
+            new Set(nums).size===members.length&&nums.every(n=>members.some(m=>m.startNo===n));
+        });
+        if(valid){
+          members.sort((a,b)=>valid.orderedStartNumbers.indexOf(a.startNo)-valid.orderedStartNumbers.indexOf(b.startNo));
+          ordered=true;
+        }
+      }
+      for(let i=0;i<members.length;i++){
+        const item=members[i];
+        const isUnresolved=members.length>1&&!ordered;
+        const row={
+          competition,startNo:item.startNo,meanScore:Number((item.sum/requiredJudges).toFixed(2)),
+          rank:isUnresolved?null:position+i,pendingDeliberation:isUnresolved,
+          phase:official?"OFFICIAL":"INTERIM"
+        };
+        if(official){
+          const p=(participants||[]).find(x=>x.competition===competition&&x.startNo===item.startNo);
+          if(p){row.fullName=p.fullName;row.school=p.school;}
+        }
+        ranked.push(row);
+      }
+      position+=members.length;
+    }
+    return ranked;
   }
 }
 

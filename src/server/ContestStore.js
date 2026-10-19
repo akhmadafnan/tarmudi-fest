@@ -73,6 +73,19 @@ class TF26SheetStore {
     this.sheet_("SETTINGS").getRange(old.rowNumber,5,1,2)
       .setValues([[newVersion,JSON.stringify(criteria)]]);
   }
+  tieDecisions(){
+    return this.data_("TIE_RESOLUTIONS").map(({row})=>{
+      let order;try{order=JSON.parse(String(row[3]||"[]"))}catch(_){order=[]}
+      return {competition:String(row[0]),scoreKey:String(row[2]),
+        orderedStartNumbers:order,reason:String(row[4]),approvedBy:String(row[5]),approvedAt:String(row[6])};
+    });
+  }
+  appendTieDecision(payload){
+    this.sheet_("TIE_RESOLUTIONS").appendRow([
+      payload.competition,payload.orderedStartNumbers.join(","),payload.scoreKey,
+      JSON.stringify(payload.orderedStartNumbers),payload.reason,payload.actorUid,payload.at
+    ]);
+  }
   markOfficial(conf,actorUid,now){
     const sh=this.sheet_("SETTINGS");
     // Identity projection only opens if BOTH publication and privacy flags
