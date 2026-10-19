@@ -210,6 +210,9 @@ body{overflow-x:hidden}
   text-align:center;
  }
 }
+/* Separate jury deliberation actions from the reason input on every screen. */
+.tie-resolution-save{display:block;margin-top:18px;min-height:48px}
+@media(max-width:700px){.tie-resolution-save{width:100%;margin-top:20px}}
 </style></head>
 <body><div class="shell">
 <header class="topbar"><div class="brand">TARMUDI <span>FEST</span> <strong>2026</strong></div><span class="tag">Kampus 2 • MIS Tarbiyatul Mubtadiin</span></header>
@@ -689,7 +692,7 @@ function drawAdminStandings(){
    reason.maxLength=500;
    box.append(node("label",null,["Urutan nomor start setelah musyawarah"]),ordered,
      node("label",null,["Alasan keputusan (minimal 15 karakter)"]),reason);
-   const save=node("button",{class:"green"},["Rekam keputusan musyawarah"]);
+   const save=node("button",{class:"green tie-resolution-save"},["Rekam keputusan musyawarah"]);
    save.onclick=()=>{
     const vals=ordered.value.split(",").map(x=>Number(x.trim()));
     const sorted=a=>a.slice().sort((a,b)=>a-b).join(",");
