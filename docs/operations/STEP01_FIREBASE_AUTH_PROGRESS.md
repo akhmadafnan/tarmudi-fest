@@ -59,3 +59,13 @@
 - GAS script property configuration and verified UID allowlist remain pending. Live Firebase ID token roundtrip through GAS and browser iframe/mobiles **NOT TESTED**. No production release authorization.
 
 **Updated decision:** Web App HTTP access **PASS**; Firebase Auth provider setup **PASS**; AUTH-GATE overall **IN_PROGRESS / NO PRODUCTION GO** until valid-user + RBAC + negative/security tests pass.
+
+
+## 2026-10-19 — Two test users verified and browser-form deployment
+
+- Firebase CLI `auth:export` performed on the authorized workstation after user-confirmed account creation: **exactly 2 accounts found**, both active, both have nonempty Firebase UID. One is the Admin candidate and one the Tahfidz Judge candidate. The user's initial typo in judge email was resolved against the actual Firebase account; addresses/UIDs omitted from public report.
+- The `develop` Firebase HTMLService test form now accepts **literal email** as a temporary test input, while keeping planned username aliases for production. The product decision for final 13 accounts remains unchanged.
+- Eight Node mocked token-verification unit tests rerun on Windows: **8/8 PASS, 0 FAIL**.
+- Test-only GAS Web App version **5** deployed, and independent HTTP GET returned **200** with the expected email-capable form. This validates page availability only.
+- **Not yet tested:** real Firebase user sign-in from iframe; Firebase ID token positive lookup and UID→role access through GAS. Four private Script Properties are still unset. The user must enter Firebase Web API Key, expected project ID, internal alias domain and UID allowlist privately (see `STEP01_FIREBASE_GAS_PRIVATE_SETUP.md`).
+- **Security gate:** AUTH-GATE is **IN_PROGRESS / NO PRODUCTION GO**. No passwords, tokens or private UID allowlist committed to GitHub.
