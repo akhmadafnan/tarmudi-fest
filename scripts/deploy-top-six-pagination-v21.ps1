@@ -57,9 +57,14 @@ try {
         & $clasp push --force
         if ($LASTEXITCODE -ne 0) { throw "clasp push failed. Backup: $backup" }
         Write-Host "[5/5] Creating separate UAT deployment..." -ForegroundColor Cyan
-        & $clasp deploy --description "TF26 v21 UAT top-six deliberation with boundary ties and Admin pagination"
-        if ($LASTEXITCODE -ne 0) { throw "clasp deploy failed. Backup: $backup" }
-        Write-Host "V21 DEPLOYMENT CREATED. Use the new deployment ID above." -ForegroundColor Green
+        $activeUatId = "AKfycbxUjeTXT_Eh0bFYdWLu525OmCINHvyiAvIhuCXK8KeW091RuoUlhvDfXc7CInkniVPl"
+        $reply = & $clasp deploy --deploymentId $activeUatId --description "TF26 v21 UAT top-six and Admin pagination" 2>&1
+        $responseText = ($reply | Out-String)
+        Write-Host $responseText
+        if ($LASTEXITCODE -ne 0 -or !$responseText.Contains("Deployed $activeUatId @")) {
+            throw "Deployment belum terverifikasi. Backup: $backup"
+        }
+        Write-Host "UAT deployment diperbarui dengan aman, URL tetap." -ForegroundColor Green
         Write-Host "No SCORES/CHECKINS/TIE_RESOLUTIONS/SETTINGS data has been changed by this script." -ForegroundColor Green
     } finally { Pop-Location }
 } finally { Pop-Location }
